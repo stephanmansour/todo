@@ -560,6 +560,164 @@
     background: var(--field);
   }
 
+  /* ---- Meldung mit Rückgängig ---- */
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 1.25rem;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    max-width: calc(100vw - 32px);
+    padding: 0.625rem 0.875rem 0.625rem 1rem;
+    border-radius: 0.75rem;
+    background: var(--card);
+    box-shadow: var(--lift);
+    font-size: 0.8125rem;
+    color: var(--text);
+    opacity: 0;
+    transform: translate(-50%, 0.5rem);
+    pointer-events: none;
+    transition: opacity 180ms, transform 180ms;
+  }
+
+  .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+
+  .toast .acts { display: flex; gap: 0.875rem; margin-left: auto; }
+
+  .toast button {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 0.8125rem;
+    color: var(--muted);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 140ms;
+  }
+
+  .toast button.strong { font-weight: 600; color: var(--text); }
+  .toast button:hover { color: var(--c-quick); }
+
+  /* ---- Heute ---- */
+
+  .day.today .weekday { color: var(--c-later); }
+
+  .today-tag {
+    padding: 0.0625rem 0.375rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--c-later) 15%, transparent);
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--c-later);
+  }
+
+  /* ---- Älteres Erledigtes ---- */
+
+  .more {
+    display: block;
+    width: 100%;
+    padding: 0.375rem 0.625rem 0.625rem;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 0.8125rem;
+    text-align: left;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 140ms;
+  }
+
+  .more:hover { color: var(--text); }
+  .more[hidden] { display: none; }
+
+  /* ---- Geräte-Sync ---- */
+
+  .sync {
+    margin-top: 1.375rem;
+    padding: 0.75rem 0.875rem;
+    border-radius: 0.875rem;
+    background: var(--card);
+    box-shadow: var(--shadow);
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+
+  .sync summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .sync summary::-webkit-details-marker { display: none; }
+  .sync summary:hover { color: var(--text); }
+
+  .sync .dot {
+    width: 0.5rem; height: 0.5rem;
+    border-radius: 50%;
+    background: var(--line);
+    box-shadow: inset 0 0 0 1px var(--muted);
+  }
+
+  .sync.on .dot { background: var(--c-quick); box-shadow: none; }
+
+  .sync .hint {
+    margin: 0.75rem 0 0;
+    line-height: 1.55;
+    max-width: 34rem;
+  }
+
+  .sync .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .sync input {
+    flex: 1;
+    min-width: 13rem;
+    padding: 0.4375rem 0.625rem;
+    border: 1px solid var(--line);
+    border-radius: 0.5rem;
+    background: var(--bg);
+    font: inherit;
+    font-size: 0.8125rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 150ms;
+  }
+
+  .sync input:focus { border-color: var(--c-delegate); }
+
+  .sync .go, .sync .ghost {
+    padding: 0.4375rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 150ms, color 150ms, border-color 150ms;
+  }
+
+  .sync .go { background: var(--c-delegate); color: var(--card); }
+  .sync .go:hover { filter: brightness(1.08); }
+
+  .sync .ghost { background: none; border-color: var(--line); color: var(--muted); }
+  .sync .ghost:hover { color: var(--text); border-color: var(--muted); }
+  .sync .ghost[hidden] { display: none; }
+
+  .sync .status { font-variant-numeric: tabular-nums; }
+
   /* ---- Notizen ---- */
 
   .notes {
@@ -691,6 +849,41 @@
       <textarea id="notes" placeholder="Freier Platz. Gedanken, Nummern, alles, was in keine Aufgabe passt."></textarea>
     </section>
 
+    <details class="sync" id="syncPanel">
+      <summary>
+        <span class="dot" aria-hidden="true"></span>
+        <span id="syncSummary">Geräte-Sync: aus</span>
+      </summary>
+
+      <p class="hint">
+        Verbindet dieses Gerät über einen eigenen Cloudflare-Worker mit deinen anderen.
+        Die Kennung ist dabei das Passwort - wer sie kennt, sieht die Liste.
+      </p>
+
+      <div class="row">
+        <input type="url" id="syncUrl" placeholder="https://…workers.dev"
+               aria-label="Adresse des Workers" autocomplete="off" spellcheck="false">
+      </div>
+
+      <div class="row">
+        <input type="text" id="syncId" placeholder="Kennung"
+               aria-label="Kennung" autocomplete="off" spellcheck="false">
+        <button type="button" id="syncNew" class="ghost">Neue Kennung</button>
+      </div>
+
+      <div class="row">
+        <button type="button" id="syncSave" class="go">Verbinden</button>
+        <button type="button" id="syncPull" class="ghost" hidden>Jetzt abgleichen</button>
+        <button type="button" id="syncOff" class="ghost" hidden>Trennen</button>
+        <span id="syncStatus" class="status"></span>
+      </div>
+    </details>
+
+    <div id="toast" class="toast" role="status" aria-live="polite">
+      <span id="toastText"></span>
+      <span id="toastActions" class="acts"></span>
+    </div>
+
     <p id="live" class="sr" role="status" aria-live="polite"></p>
   </div>
 
@@ -702,6 +895,12 @@
   var NOTE_KEY  = 'notion-todo-notes-v1';
   var SCALE_KEY = 'notion-todo-scale-v1';
   var VIEW_KEY  = 'notion-todo-view-v1';
+  var WEEK_KEY  = 'notion-todo-week-v1';
+  var SYNC_KEY  = 'notion-todo-sync-v1';
+  var STAMP_KEY = 'notion-todo-stamp-v1';
+
+  // So viele erledigte Aufgaben stehen offen da, der Rest klappt auf Wunsch aus.
+  var DONE_VISIBLE = 15;
 
   // So lange darf der Durchstreich-Strich laufen, bevor die Zeile umzieht.
   var MOVE_DELAY = 340;
@@ -745,6 +944,18 @@
   var zoomEl     = document.getElementById('zoom');
   var viewToggle = document.getElementById('viewToggle');
   var notesSection = document.getElementById('notesSection');
+  var toastEl      = document.getElementById('toast');
+  var toastText    = document.getElementById('toastText');
+  var toastActions = document.getElementById('toastActions');
+  var syncPanel    = document.getElementById('syncPanel');
+  var syncSummary  = document.getElementById('syncSummary');
+  var syncUrl      = document.getElementById('syncUrl');
+  var syncId       = document.getElementById('syncId');
+  var syncStatus   = document.getElementById('syncStatus');
+  var syncSave     = document.getElementById('syncSave');
+  var syncNew      = document.getElementById('syncNew');
+  var syncPull     = document.getElementById('syncPull');
+  var syncOff      = document.getElementById('syncOff');
 
   var ICON_GRIP  = '<svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor"><circle cx="2.5" cy="4" r="1.15"/><circle cx="7.5" cy="4" r="1.15"/><circle cx="2.5" cy="8" r="1.15"/><circle cx="7.5" cy="8" r="1.15"/><circle cx="2.5" cy="12" r="1.15"/><circle cx="7.5" cy="12" r="1.15"/></svg>';
   var ICON_CHECK = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.4 4.7 9 10 3.2"/></svg>';
@@ -753,12 +964,16 @@
   var MOTION_OK = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   var COLUMNS = [];
-  var doneSection, doneList, doneCount;
+  var doneSection, doneList, doneCount, doneMore;
   var tasks = readTasks();
   var drag = null;
   var noteTimer = null;
   var moveTimer = null;
   var scaleTimer = null;
+  var toastTimer = null;
+  var showAllDone = false;
+  var sync = { url: '', id: '', busy: false, pushTimer: null, lastPull: 0 };
+  var applyingRemote = false;
 
   /* ---------- Daten ---------- */
 
@@ -823,6 +1038,7 @@
     } catch (err) {
       showWarning();
     }
+    touch();
   }
 
   function saveNotes() {
@@ -833,6 +1049,7 @@
     } catch (err) {
       showWarning();
     }
+    touch();
   }
 
   function showWarning() {
@@ -878,10 +1095,23 @@
     return label;
   }
 
+  // Position des heutigen Werktags, am Wochenende -1.
+  function todayIndex() {
+    var index = new Date().getDay() - 1;
+    return index >= 0 && index <= 4 ? index : -1;
+  }
+
   // Am Wochenende ist Montag der nächste sinnvolle Vorschlag.
   function todayKey() {
-    var index = new Date().getDay() - 1;
-    return index >= 0 && index <= 4 ? DAYS[index].key : 'mo';
+    var index = todayIndex();
+    return index === -1 ? 'mo' : DAYS[index].key;
+  }
+
+  function dayIndex(key) {
+    for (var i = 0; i < DAYS.length; i++) {
+      if (DAYS[i].key === key) return i;
+    }
+    return 0;
   }
 
   function buildPickers() {
@@ -986,6 +1216,15 @@
     tick.hidden = true;
 
     head.appendChild(weekday);
+
+    if (dayIndex(day.key) === todayIndex()) {
+      var tag = document.createElement('span');
+      tag.className = 'today-tag';
+      tag.textContent = 'heute';
+      head.appendChild(tag);
+      wrap.classList.add('today');
+    }
+
     head.appendChild(rule);
     head.appendChild(tick);
 
@@ -1026,8 +1265,18 @@
     doneList.className = 'list';
     doneList.setAttribute('aria-labelledby', head.titleId);
 
+    doneMore = document.createElement('button');
+    doneMore.type = 'button';
+    doneMore.className = 'more';
+    doneMore.hidden = true;
+    doneMore.addEventListener('click', function () {
+      showAllDone = !showAllDone;
+      render();
+    });
+
     doneSection.appendChild(head.el);
     doneSection.appendChild(doneList);
+    doneSection.appendChild(doneMore);
     COLUMNS[2].appendChild(doneSection);
 
     doneCount = head.countEl;
@@ -1125,11 +1374,17 @@
     // Zuletzt Abgehaktes steht oben.
     finished.sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
 
+    var shown = showAllDone ? finished : finished.slice(0, DONE_VISIBLE);
+    var hidden = finished.length - shown.length;
+
     BINS.forEach(function (bin, index) {
       bin.listEl.replaceChildren.apply(bin.listEl, buckets[index]);
     });
 
-    doneList.replaceChildren.apply(doneList, finished.map(buildRow));
+    doneList.replaceChildren.apply(doneList, shown.map(buildRow));
+
+    doneMore.hidden = finished.length <= DONE_VISIBLE;
+    doneMore.textContent = showAllDone ? 'Weniger anzeigen' : hidden + ' ältere anzeigen';
 
     updateMeta();
   }
@@ -1170,6 +1425,59 @@
 
   function announce(message) { liveEl.textContent = message; }
 
+  /* Eine Meldung unten am Rand. Ohne "sticky" verschwindet sie von selbst. */
+  function toast(message, actions, sticky) {
+    toastText.textContent = message;
+
+    toastActions.replaceChildren.apply(toastActions, (actions || []).map(function (action) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      if (action.strong) button.className = 'strong';
+      button.textContent = action.label;
+      button.addEventListener('click', function () {
+        hideToast();
+        if (action.run) action.run();
+      });
+      return button;
+    }));
+
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    if (!sticky) toastTimer = setTimeout(hideToast, 10000);
+  }
+
+  function hideToast() {
+    clearTimeout(toastTimer);
+    toastEl.classList.remove('show');
+  }
+
+  function shorten(text) {
+    return text.length > 42 ? text.slice(0, 41).trim() + '…' : text;
+  }
+
+  /* Zustand vor einem Eingriff sichern und zum Zurückholen anbieten. */
+  function snapshot() {
+    return { tasks: JSON.parse(JSON.stringify(tasks)), notes: notesEl.value };
+  }
+
+  function undoable(message, before) {
+    toast(message, [{
+      label: 'Rückgängig',
+      strong: true,
+      run: function () {
+        tasks = before.tasks.map(normalize);
+        save();
+
+        notesEl.value = before.notes;
+        growNotes();
+        saveNotes();
+
+        render();
+        announce('Wiederhergestellt.');
+      }
+    }]);
+  }
+
   function taskById(id) {
     for (var i = 0; i < tasks.length; i++) {
       if (tasks[i].id === id) return tasks[i];
@@ -1194,10 +1502,7 @@
     return list[0];
   }
 
-  function add(value) {
-    var text = value.trim();
-    if (!text) return;
-
+  function stage(text) {
     var cat = selected(CATS);
     var day = cat.key === 'later' ? selected(DAYS) : null;
 
@@ -1210,9 +1515,36 @@
       doneAt: null
     });
 
+    return { cat: cat, day: day };
+  }
+
+  function add(value) {
+    var text = value.trim();
+    if (!text) return;
+
+    var where = stage(text);
     save();
     render();
-    announce('Hinzugefügt: ' + cat.name + (day ? ', ' + day.name : ''));
+    announce('Hinzugefügt: ' + where.cat.name + (where.day ? ', ' + where.day.name : ''));
+  }
+
+  /* Mehrzeiliges Eingefügtes wird zu je einer Aufgabe pro Zeile.
+     Aufzählungszeichen und Nummerierungen fallen dabei weg. */
+  function addLines(raw) {
+    var lines = raw.split(/\r?\n/)
+      .map(function (line) { return line.replace(/^\s*(?:[-*•‣–]|\d+[.)])\s+/, '').trim(); })
+      .filter(function (line) { return line.length > 0; });
+
+    if (lines.length === 0) return 0;
+
+    var where = null;
+    lines.forEach(function (line) { where = stage(line); });
+
+    save();
+    render();
+    announce(lines.length + ' Aufgaben hinzugefügt: ' + where.cat.name);
+
+    return lines.length;
   }
 
   /* Erst den Strich zeichnen lassen, dann umziehen. Die Kategorie bleibt
@@ -1255,17 +1587,29 @@
   }
 
   function remove(id) {
+    var task = taskById(id);
+    if (!task) return;
+
+    var before = snapshot();
     tasks = tasks.filter(function (t) { return t.id !== id; });
     save();
     render();
+
     announce('Aufgabe gelöscht.');
+    undoable('Gelöscht: ' + shorten(task.text), before);
   }
 
   function clearDone() {
+    var count = tasks.filter(function (t) { return t.done; }).length;
+    if (count === 0) return;
+
+    var before = snapshot();
     tasks = tasks.filter(function (t) { return !t.done; });
     save();
     render();
+
     announce('Erledigte Aufgaben entfernt.');
+    undoable(count + (count === 1 ? ' erledigte Aufgabe entfernt.' : ' erledigte Aufgaben entfernt.'), before);
   }
 
   function startEdit(li, task) {
@@ -1607,6 +1951,76 @@
     applyScale(isNaN(stored) ? 1 : stored);
   }
 
+  /* ---------- Wochenlauf ----------
+     Aufgaben in Abschnitt 3 hängen an einem Wochentag, nicht an einem Datum.
+     Beim Öffnen wird deshalb geprüft, was aus vergangenen Tagen liegen blieb -
+     verschoben wird nur auf ausdrückliche Zustimmung. */
+
+  function weekStamp() {
+    var now = new Date();
+    var date = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    var weekday = date.getUTCDay() || 7;
+
+    date.setUTCDate(date.getUTCDate() + 4 - weekday);
+    var yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    var week = Math.ceil(((date - yearStart) / 86400000 + 1) / 7);
+
+    return date.getUTCFullYear() + '-W' + week;
+  }
+
+  function checkWeek() {
+    var stamp = weekStamp();
+    var previous = null;
+
+    try {
+      previous = localStorage.getItem(WEEK_KEY);
+      localStorage.setItem(WEEK_KEY, stamp);
+    } catch (err) {
+      return;
+    }
+
+    var freshWeek = previous !== null && previous !== stamp;
+    var today = todayIndex();
+    var target = DAYS[today === -1 ? 0 : today];
+
+    var stale = tasks.filter(function (task) {
+      if (task.done || task.cat !== 'later' || task.day === target.key) return false;
+      if (freshWeek || today === -1) return true;
+      return dayIndex(task.day) < today;
+    });
+
+    if (stale.length === 0) return;
+
+    var lead = freshWeek ? 'Neue Woche. ' : '';
+    var body = stale.length === 1 ? 'Eine Aufgabe liegt noch offen.'
+                                  : stale.length + ' Aufgaben liegen noch offen.';
+
+    toast(lead + body, [
+      { label: 'Auf ' + target.name, strong: true, run: function () { moveStale(stale, target); } },
+      { label: 'Lassen' }
+    ], true);
+  }
+
+  function moveStale(list, target) {
+    var before = snapshot();
+    var moved = 0;
+
+    list.forEach(function (stale) {
+      var task = taskById(stale.id);
+      if (!task || task.done || task.cat !== 'later') return;
+      task.day = target.key;
+      moved++;
+    });
+
+    if (moved === 0) return;
+
+    save();
+    render();
+
+    announce(moved + ' Aufgaben auf ' + target.name + ' geschoben.');
+    undoable('Auf ' + target.name + ' geschoben: ' + moved, before);
+  }
+
   /* ---------- Ansicht ---------- */
 
   function applyView(wide) {
@@ -1641,6 +2055,146 @@
       notesEl.value = '';
     }
     growNotes();
+  }
+
+  /* ---------- Abgleich zwischen Geräten ----------
+     Ein eigener Cloudflare-Worker hält eine Kopie unter einer geheimen Kennung.
+     Wer zuletzt gespeichert hat, gewinnt - für eine private Liste reicht das. */
+
+  function syncOn() { return sync.url !== '' && sync.id !== ''; }
+
+  function endpoint() {
+    return sync.url.replace(/\/+$/, '') + '/?id=' + encodeURIComponent(sync.id);
+  }
+
+  function clock() {
+    var now = new Date();
+    return ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
+  }
+
+  function setStatus(text) {
+    syncStatus.textContent = text;
+    syncSummary.textContent = syncOn() ? 'Geräte-Sync: an' + (text ? ' · ' + text : '') : 'Geräte-Sync: aus';
+    syncPanel.classList.toggle('on', syncOn());
+    syncPull.hidden = !syncOn();
+    syncOff.hidden = !syncOn();
+    syncSave.textContent = syncOn() ? 'Übernehmen' : 'Verbinden';
+  }
+
+  function readStamp() {
+    try {
+      return parseInt(localStorage.getItem(STAMP_KEY), 10) || 0;
+    } catch (err) {
+      return 0;
+    }
+  }
+
+  function writeStamp(value) {
+    try {
+      localStorage.setItem(STAMP_KEY, String(value));
+    } catch (err) {}
+  }
+
+  // Jede lokale Änderung läuft hier durch und stößt das Hochladen an.
+  function touch() {
+    if (applyingRemote) return;
+    writeStamp(Date.now());
+
+    if (!syncOn()) return;
+    clearTimeout(sync.pushTimer);
+    sync.pushTimer = setTimeout(push, 1200);
+  }
+
+  function push() {
+    if (!syncOn() || sync.busy) return;
+
+    sync.busy = true;
+    setStatus('sendet …');
+
+    fetch(endpoint(), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updatedAt: readStamp(), tasks: tasks, notes: notesEl.value })
+    })
+      .then(function (response) {
+        if (!response.ok) throw new Error(String(response.status));
+        setStatus('abgeglichen ' + clock());
+      })
+      .catch(function () { setStatus('nicht erreichbar'); })
+      .then(function () { sync.busy = false; });
+  }
+
+  function pull() {
+    if (!syncOn() || sync.busy) return;
+
+    sync.busy = true;
+    sync.lastPull = Date.now();
+    setStatus('prüft …');
+
+    fetch(endpoint())
+      .then(function (response) {
+        if (!response.ok) throw new Error(String(response.status));
+        return response.json();
+      })
+      .then(function (data) {
+        sync.busy = false;
+
+        if (!data || data.empty) { push(); return; }
+
+        var remote = data.updatedAt || 0;
+        if (remote > readStamp()) adopt(data);
+        else if (readStamp() > remote) push();
+        else setStatus('abgeglichen ' + clock());
+      })
+      .catch(function () {
+        sync.busy = false;
+        setStatus('nicht erreichbar');
+      });
+  }
+
+  function adopt(data) {
+    applyingRemote = true;
+
+    var incoming = Array.isArray(data.tasks) ? data.tasks.filter(isTask).map(normalize) : [];
+    tasks = incoming;
+    save();
+
+    if (typeof data.notes === 'string') {
+      notesEl.value = data.notes;
+      growNotes();
+      saveNotes();
+    }
+
+    writeStamp(data.updatedAt || Date.now());
+    applyingRemote = false;
+
+    render();
+    setStatus('geladen ' + clock());
+  }
+
+  function freshId() {
+    var raw = new Uint8Array(18);
+    (window.crypto || window.msCrypto).getRandomValues(raw);
+
+    var out = '';
+    for (var i = 0; i < raw.length; i++) out += ('0' + raw[i].toString(16)).slice(-2);
+    return out;
+  }
+
+  function loadSync() {
+    try {
+      var parsed = JSON.parse(localStorage.getItem(SYNC_KEY) || 'null');
+      if (parsed && typeof parsed.url === 'string' && typeof parsed.id === 'string') {
+        sync.url = parsed.url;
+        sync.id = parsed.id;
+      }
+    } catch (err) {}
+
+    syncUrl.value = sync.url;
+    syncId.value = sync.id || freshId();
+    setStatus(syncOn() ? 'bereit' : '');
+
+    if (syncOn()) pull();
   }
 
   /* ---------- Sichern & Laden ---------- */
@@ -1686,6 +2240,8 @@
         return;
       }
 
+      var before = snapshot();
+
       tasks = incoming;
       save();
       render();
@@ -1697,6 +2253,7 @@
       }
 
       announce(incoming.length + ' Aufgaben geladen.');
+      undoable('Liste ersetzt durch ' + incoming.length + ' Aufgaben.', before);
     };
 
     reader.onerror = function () { alert('Die Datei konnte nicht gelesen werden.'); };
@@ -1721,6 +2278,69 @@
     CATS[index].inputEl.checked = true;
     pickCat(CATS[index]);
     newTask.focus();
+  });
+
+  newTask.addEventListener('paste', function (e) {
+    var clip = e.clipboardData || window.clipboardData;
+    var text = clip ? clip.getData('text') : '';
+    if (!text || text.indexOf('\n') === -1) return;
+
+    e.preventDefault();
+    if (addLines(text)) newTask.value = '';
+  });
+
+  syncSave.addEventListener('click', function () {
+    var url = syncUrl.value.trim();
+    var id = syncId.value.trim();
+
+    if (!/^https:\/\/\S+$/.test(url)) {
+      toast('Die Adresse muss mit https:// beginnen.');
+      syncUrl.focus();
+      return;
+    }
+
+    if (id.length < 12) {
+      toast('Die Kennung ist zu kurz - lieber eine neue erzeugen.');
+      syncId.focus();
+      return;
+    }
+
+    sync.url = url;
+    sync.id = id;
+
+    try {
+      localStorage.setItem(SYNC_KEY, JSON.stringify({ url: url, id: id }));
+    } catch (err) {
+      showWarning();
+    }
+
+    setStatus('verbindet …');
+    pull();
+  });
+
+  syncNew.addEventListener('click', function () {
+    syncId.value = freshId();
+    syncId.focus();
+    syncId.select();
+  });
+
+  syncPull.addEventListener('click', pull);
+
+  syncOff.addEventListener('click', function () {
+    sync.url = '';
+    sync.id = '';
+
+    try {
+      localStorage.removeItem(SYNC_KEY);
+    } catch (err) {}
+
+    setStatus('');
+    toast('Getrennt. Die Liste bleibt auf diesem Gerät.');
+  });
+
+  // Beim Zurückkommen nachsehen, ob ein anderes Gerät etwas geändert hat.
+  window.addEventListener('focus', function () {
+    if (syncOn() && Date.now() - sync.lastPull > 20000) pull();
   });
 
   viewToggle.addEventListener('click', function () {
@@ -1774,6 +2394,8 @@
   buildSections();
   render();
   loadNotes();
+  loadSync();
+  checkWeek();
 
   if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
     newTask.focus();
