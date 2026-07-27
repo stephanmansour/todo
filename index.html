@@ -272,6 +272,40 @@
   .daypicker { margin-top: 0.4375rem; }
   .daypicker .pill span { padding: 0.3125rem 0.6875rem; font-size: 0.75rem; }
 
+  /* ---- Spalten ---- */
+
+  #sections {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 0 0.875rem;
+  }
+
+  .column { min-width: 0; }
+
+  .viewtoggle {
+    display: inline-grid;
+    place-items: center;
+    color: var(--muted);
+  }
+
+  .viewtoggle svg { width: 0.875rem; height: 0.75rem; }
+
+  .viewtoggle[aria-pressed="true"] { color: var(--text); }
+
+  /* Drei Spalten lohnen sich erst ab dieser Fensterbreite. Darunter bleibt
+     die Ansicht einspaltig und der Schalter wird gar nicht erst angeboten. */
+  @media (min-width: 1040px) {
+    body.wide .app { max-width: 1360px; }
+    body.wide #sections { grid-template-columns: repeat(3, 1fr); }
+    body.wide #newTask,
+    body.wide .picker { max-width: 42rem; }
+  }
+
+  @media (max-width: 1039px) {
+    .viewtoggle { display: none; }
+  }
+
   /* ---- Abschnitte ---- */
 
   .section {
@@ -622,6 +656,9 @@
     <div class="topbar">
       <div><span class="brand">To-do</span><span id="count" class="tally"></span></div>
       <div class="tools">
+        <button type="button" id="viewToggle" class="linkbtn viewtoggle" aria-pressed="false">
+          <svg viewBox="0 0 14 12" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="3.2" height="12" rx="1"/><rect x="5.4" y="0" width="3.2" height="12" rx="1"/><rect x="10.8" y="0" width="3.2" height="12" rx="1"/></svg>
+        </button>
         <button type="button" id="exportBtn" class="linkbtn">Sichern</button>
         <button type="button" id="importBtn" class="linkbtn">Laden</button>
         <input type="file" id="importFile" accept="application/json,.json" hidden>
@@ -646,7 +683,7 @@
 
     <main id="sections"></main>
 
-    <section class="notes">
+    <section class="notes" id="notesSection">
       <header>
         <h2>Notizen</h2>
         <span id="saved" class="saved">gespeichert</span>
@@ -664,19 +701,20 @@
   var TASK_KEY  = 'notion-todo-v1';
   var NOTE_KEY  = 'notion-todo-notes-v1';
   var SCALE_KEY = 'notion-todo-scale-v1';
+  var VIEW_KEY  = 'notion-todo-view-v1';
 
   // So lange darf der Durchstreich-Strich laufen, bevor die Zeile umzieht.
   var MOVE_DELAY = 340;
 
   var CATS = [
     { key: 'quick',    n: 1, name: 'Schnell erledigt', qualifier: 'bitte jetzt',
-      pick: 'Jetzt',      color: 'var(--c-quick)' },
+      pick: 'Jetzt',      color: 'var(--c-quick)',    column: 0 },
     { key: 'vital',    n: 2, name: 'Wirklich wichtig', qualifier: '',
-      pick: 'Wichtig',    color: 'var(--c-vital)' },
+      pick: 'Wichtig',    color: 'var(--c-vital)',    column: 0 },
     { key: 'later',    n: 3, name: 'Kann noch warten', qualifier: '',
-      pick: 'Später',     color: 'var(--c-later)' },
+      pick: 'Später',     color: 'var(--c-later)',    column: 1 },
     { key: 'delegate', n: 4, name: 'Delegier das',     qualifier: 'nicht so wichtig',
-      pick: 'Delegieren', color: 'var(--c-delegate)' }
+      pick: 'Delegieren', color: 'var(--c-delegate)', column: 2 }
   ];
 
   var DAYS = [
@@ -705,6 +743,8 @@
   var notesEl    = document.getElementById('notes');
   var savedEl    = document.getElementById('saved');
   var zoomEl     = document.getElementById('zoom');
+  var viewToggle = document.getElementById('viewToggle');
+  var notesSection = document.getElementById('notesSection');
 
   var ICON_GRIP  = '<svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor"><circle cx="2.5" cy="4" r="1.15"/><circle cx="7.5" cy="4" r="1.15"/><circle cx="2.5" cy="8" r="1.15"/><circle cx="7.5" cy="8" r="1.15"/><circle cx="2.5" cy="12" r="1.15"/><circle cx="7.5" cy="12" r="1.15"/></svg>';
   var ICON_CHECK = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.4 4.7 9 10 3.2"/></svg>';
@@ -712,6 +752,7 @@
 
   var MOTION_OK = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  var COLUMNS = [];
   var doneSection, doneList, doneCount;
   var tasks = readTasks();
   var drag = null;
@@ -886,6 +927,17 @@
     return { el: head, titleId: title.id, countEl: count };
   }
 
+  /* Drei feste Spalten. In der schmalen Ansicht stehen sie untereinander,
+     wodurch sich von selbst wieder die gewohnte Reihenfolge 1-2-3-4 ergibt. */
+  function buildColumns() {
+    for (var i = 0; i < 3; i++) {
+      var column = document.createElement('div');
+      column.className = 'column';
+      sectionsEl.appendChild(column);
+      COLUMNS.push(column);
+    }
+  }
+
   function buildSections() {
     CATS.forEach(function (cat) {
       var section = document.createElement('section');
@@ -907,11 +959,12 @@
         cat.emptyEl = empty;
       }
 
-      sectionsEl.appendChild(section);
+      COLUMNS[cat.column].appendChild(section);
       cat.countEl = head.countEl;
     });
 
     buildDoneSection();
+    COLUMNS[2].appendChild(notesSection);
   }
 
   function buildDay(cat, day) {
@@ -975,7 +1028,7 @@
 
     doneSection.appendChild(head.el);
     doneSection.appendChild(doneList);
-    sectionsEl.appendChild(doneSection);
+    COLUMNS[2].appendChild(doneSection);
 
     doneCount = head.countEl;
   }
@@ -1320,15 +1373,20 @@
   }
 
   // Das Fach unter dem Zeiger - oder, wenn keins passt, das nächstgelegene.
-  function binAt(y) {
-    var nearest = null, gap = Infinity;
+  // Waagerecht und senkrecht gemessen, damit es auch neben- statt
+  // untereinander liegende Spalten richtig trifft.
+  function binAt(x, y) {
+    var nearest = null, best = Infinity;
 
     for (var i = 0; i < BINS.length; i++) {
       var box = BINS[i].zoneEl.getBoundingClientRect();
-      if (y >= box.top && y <= box.bottom) return BINS[i];
+      var dx = x < box.left ? box.left - x : (x > box.right ? x - box.right : 0);
+      var dy = y < box.top ? box.top - y : (y > box.bottom ? y - box.bottom : 0);
 
-      var distance = y < box.top ? box.top - y : y - box.bottom;
-      if (distance < gap) { gap = distance; nearest = BINS[i]; }
+      if (!dx && !dy) return BINS[i];
+
+      var distance = dx * dx + dy * dy;
+      if (distance < best) { best = distance; nearest = BINS[i]; }
     }
 
     return nearest;
@@ -1345,7 +1403,7 @@
   }
 
   function updateTarget() {
-    var bin = binAt(drag.y);
+    var bin = binAt(drag.x, drag.y);
     if (!bin) return;
 
     if (drag.bin !== bin) {
@@ -1549,6 +1607,26 @@
     applyScale(isNaN(stored) ? 1 : stored);
   }
 
+  /* ---------- Ansicht ---------- */
+
+  function applyView(wide) {
+    document.body.classList.toggle('wide', wide);
+    viewToggle.setAttribute('aria-pressed', String(wide));
+    viewToggle.setAttribute('aria-label', wide ? 'Schmale Ansicht' : 'Breite Ansicht, drei Spalten');
+    viewToggle.title = wide ? 'Schmale Ansicht' : 'Breite Ansicht, drei Spalten';
+    return wide;
+  }
+
+  function loadView() {
+    var stored;
+    try {
+      stored = localStorage.getItem(VIEW_KEY);
+    } catch (err) {
+      stored = null;
+    }
+    applyView(stored === 'wide');
+  }
+
   /* ---------- Notizen ---------- */
 
   function growNotes() {
@@ -1645,6 +1723,17 @@
     newTask.focus();
   });
 
+  viewToggle.addEventListener('click', function () {
+    var wide = applyView(viewToggle.getAttribute('aria-pressed') !== 'true');
+    growNotes();
+
+    try {
+      localStorage.setItem(VIEW_KEY, wide ? 'wide' : 'narrow');
+    } catch (err) {
+      showWarning();
+    }
+  });
+
   zoomEl.addEventListener('input', function () {
     var scale = applyScale(parseFloat(zoomEl.value));
     growNotes();
@@ -1677,9 +1766,11 @@
   window.addEventListener('resize', growNotes);
 
   loadScale();
+  loadView();
 
   if (!storageWorks()) showWarning();
   buildPickers();
+  buildColumns();
   buildSections();
   render();
   loadNotes();
