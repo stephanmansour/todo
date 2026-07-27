@@ -9,45 +9,45 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon-192.png">
 <link rel="apple-touch-icon" href="./icon-192.png">
-<meta name="theme-color" content="#F6F7F9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0E1014" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F4F2ED" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141312" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="To-do">
 <style>
+  /* Raster: 4px-Grundeinheit, eine Randspalte (--rail), in der alle Marken
+     bündig rechts stehen. Farbe markiert nur, sie füllt nichts. */
+
   :root {
-    --bg:      #F6F7F9;
-    --card:    #FFFFFF;
-    --text:    #16181D;
-    --muted:   #8A8F98;
-    --line:    #E7E9ED;
-    --field:   #F1F3F6;
-    --shadow:  0 1px 2px rgba(16,24,40,.04), 0 2px 8px rgba(16,24,40,.05);
-    --lift:    0 8px 28px rgba(16,24,40,.16);
+    --paper:  #F4F2ED;
+    --ink:    #1A1917;
+    --soft:   #6F6B63;
+    --rule:   #DAD5CB;
+    --tint:   rgba(26,25,23,.045);
+    --lift:   0 10px 30px rgba(26,25,23,.18);
 
-    --c-quick:    #16A34A;
-    --c-vital:    #E11D48;
-    --c-later:    #D97706;
-    --c-delegate: #64748B;
+    --c1: #1F6B4A;
+    --c2: #B32A20;
+    --c3: #9A6B15;
+    --c4: #5C5C5C;
 
-    --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+    --rail: 48px;
+    --sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
   }
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg:     #0E1014;
-      --card:   #171A20;
-      --text:   #E6E8EC;
-      --muted:  #868C97;
-      --line:   #262A32;
-      --field:  #1E222A;
-      --shadow: 0 0 0 1px rgba(255,255,255,.045);
-      --lift:   0 10px 34px rgba(0,0,0,.6);
+      --paper: #141312;
+      --ink:   #E8E4DC;
+      --soft:  #8F8A81;
+      --rule:  #2E2B27;
+      --tint:  rgba(232,228,220,.055);
+      --lift:  0 10px 34px rgba(0,0,0,.65);
 
-      --c-quick:    #3DD68C;
-      --c-vital:    #FB7185;
-      --c-later:    #FBBF24;
-      --c-delegate: #94A3B8;
+      --c1: #5FBF8C;
+      --c2: #E8695C;
+      --c3: #D2A03C;
+      --c4: #9A9A9A;
     }
   }
 
@@ -55,285 +55,292 @@
 
   body {
     margin: 0;
-    background: var(--bg);
-    color: var(--text);
+    background: var(--paper);
+    color: var(--ink);
     font-family: var(--sans);
     font-size: 15px;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
 
-  .app {
+  body.dragging { user-select: none; cursor: grabbing; }
+
+  .sheet {
     max-width: 640px;
     margin: 0 auto;
-    padding: 0 18px 56px;
+    padding: 0 24px 64px;
   }
 
-  /* ---- Kopfzeile ---- */
+  /* ---- Kopf ---- */
 
-  .topbar {
+  .masthead {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: baseline;
-    gap: 6px 14px;
-    padding: 22px 2px 14px;
+    gap: 4px 16px;
+    padding: 32px 0 10px;
   }
 
-  .brand {
-    font-size: 19px;
-    font-weight: 680;
-    letter-spacing: -.02em;
+  .wordmark {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -.01em;
   }
 
-  .tally {
-    margin-left: 8px;
-    font-size: 13px;
-    font-weight: 450;
-    color: var(--muted);
+  .stat {
+    margin-left: 10px;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--soft);
   }
 
-  .tools { display: flex; gap: 16px; }
+  .tools { display: flex; gap: 18px; }
 
   .linkbtn {
     padding: 0;
     border: 0;
     background: none;
-    font: inherit;
-    font-size: 13px;
-    color: var(--muted);
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--soft);
     cursor: pointer;
-    transition: color 140ms;
+    transition: color 120ms;
   }
 
-  .linkbtn:hover, .linkbtn:focus-visible { color: var(--text); }
+  .linkbtn:hover, .linkbtn:focus-visible { color: var(--ink); }
 
   /* ---- Eingabe ---- */
 
   .composer {
     position: sticky;
     top: 0;
-    z-index: 4;
-    padding: 8px 0 14px;
-    background: var(--bg);
+    z-index: 20;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
   }
 
-  .composer::after {
-    content: '';
-    display: block;
-    height: 14px;
-    margin: 0 0 -14px;
-    background: linear-gradient(var(--bg), transparent);
+  .field {
+    display: grid;
+    grid-template-columns: var(--rail) 1fr;
+    align-items: baseline;
+    gap: 0 10px;
+    padding: 14px 0 10px;
+  }
+
+  .field .mark {
+    font-size: 15px;
+    text-align: right;
+    color: var(--soft);
   }
 
   #newTask {
-    width: 100%;
-    padding: 15px 17px;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    background: var(--card);
-    box-shadow: var(--shadow);
-    font: inherit;
-    font-size: 15.5px;
-    color: var(--text);
-    caret-color: var(--pick, var(--text));
+    padding: 0;
+    border: 0;
+    background: none;
+    font-family: inherit;
+    font-size: 17px;
+    line-height: 1.4;
+    color: var(--ink);
     outline: none;
-    transition: border-color 150ms, box-shadow 150ms;
   }
 
-  #newTask::placeholder { color: var(--muted); }
+  #newTask::placeholder { color: var(--soft); }
 
-  #newTask:focus {
-    border-color: var(--pick, var(--line));
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pick, var(--text)) 14%, transparent);
+  .choices {
+    display: grid;
+    grid-template-columns: var(--rail) 1fr;
+    align-items: baseline;
+    gap: 0 10px;
   }
 
-  .picker {
+  .choices .mark {
+    font-size: 10px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    text-align: right;
+    color: var(--soft);
+  }
+
+  .options {
     display: flex;
     flex-wrap: wrap;
-    gap: 7px;
-    margin-top: 9px;
+    gap: 4px 18px;
   }
 
-  .pill { cursor: pointer; }
+  .opt { cursor: pointer; }
 
-  .pill input {
+  .opt input {
     position: absolute;
     width: 1px; height: 1px;
     opacity: 0;
     pointer-events: none;
   }
 
-  .pill span {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px 6px 9px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    background: var(--card);
-    font-size: 12.5px;
-    font-weight: 500;
-    color: var(--muted);
-    white-space: nowrap;
-    transition: background 150ms, color 150ms, border-color 150ms;
-  }
-
-  .pill span::before {
-    content: attr(data-n);
-    display: grid;
-    place-items: center;
-    width: 17px; height: 17px;
-    border-radius: 6px;
-    background: color-mix(in srgb, var(--c) 16%, transparent);
-    color: var(--c);
+  .opt span {
+    display: inline-block;
+    padding: 3px 0;
+    border-bottom: 2px solid transparent;
     font-size: 10.5px;
-    font-weight: 700;
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--soft);
+    white-space: nowrap;
+    transition: color 120ms, border-color 120ms;
   }
 
-  .pill:hover span { border-color: color-mix(in srgb, var(--c) 45%, var(--line)); }
+  .opt:hover span { color: var(--ink); }
 
-  .pill input:checked + span {
-    border-color: transparent;
-    background: color-mix(in srgb, var(--c) 13%, var(--card));
+  .opt input:checked + span {
+    border-bottom-color: var(--c);
     color: var(--c);
   }
 
-  .pill input:checked + span::before { background: var(--c); color: var(--card); }
+  .opt input:focus-visible + span { outline: 2px solid var(--c); outline-offset: 3px; }
 
-  .pill input:focus-visible + span {
-    outline: 2px solid var(--c);
-    outline-offset: 2px;
-  }
+  .days { margin-top: 6px; }
+  .days[hidden] { display: none; }
 
-  /* ---- Abschnitte ---- */
+  /* ---- Abschnitt ---- */
 
-  .section {
-    margin-bottom: 14px;
-    padding: 4px 6px 6px;
-    border-radius: 16px;
-    background: var(--card);
-    box-shadow: var(--shadow);
-    transition: background 160ms;
-  }
-
-  .section.over { background: color-mix(in srgb, var(--c) 8%, var(--card)); }
+  .section { padding-top: 30px; }
 
   .section > header {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 12px 10px 10px;
+    display: grid;
+    grid-template-columns: var(--rail) 1fr auto;
+    align-items: baseline;
+    gap: 0 10px;
+    padding-bottom: 7px;
+    border-bottom: 1.5px solid var(--c);
   }
 
-  .badge {
-    display: grid;
-    place-items: center;
-    width: 21px; height: 21px;
-    border-radius: 7px;
-    background: var(--c);
-    color: var(--card);
-    font-size: 11.5px;
-    font-weight: 700;
+  .numeral {
+    font-size: 25px;
+    font-weight: 300;
+    line-height: 1;
+    text-align: right;
+    color: var(--c);
+    font-variant-numeric: lining-nums;
   }
 
   .section h2 {
     margin: 0;
-    font-size: 11.5px;
-    font-weight: 700;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--c);
-  }
-
-  .aside {
     font-size: 11px;
-    letter-spacing: .02em;
-    color: var(--muted);
-    text-transform: lowercase;
-  }
-
-  .count {
-    margin-left: auto;
-    min-width: 22px;
-    padding: 2px 7px;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--c) 12%, transparent);
-    font-size: 11.5px;
     font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  .section h2 .qualifier {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--soft);
+  }
+
+  .total {
+    font-size: 11px;
     font-variant-numeric: tabular-nums;
-    text-align: center;
-    color: var(--c);
+    color: var(--soft);
   }
 
-  .count[hidden] { display: none; }
+  .total[hidden] { display: none; }
 
-  .empty {
-    margin: 0;
-    padding: 2px 10px 12px;
-    font-size: 13.5px;
-    color: var(--muted);
+  /* ---- Wochentage in Abschnitt 3 ---- */
+
+  .day > header {
+    display: grid;
+    grid-template-columns: var(--rail) 1fr auto;
+    align-items: center;
+    gap: 0 10px;
+    padding-top: 14px;
   }
+
+  .day .label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    text-align: right;
+    color: var(--soft);
+  }
+
+  .day .hair { border-top: 1px solid var(--rule); }
+
+  .day .count {
+    font-size: 10.5px;
+    font-variant-numeric: tabular-nums;
+    color: var(--soft);
+  }
+
+  .day .count[hidden] { display: none; }
 
   /* ---- Aufgaben ---- */
 
-  .list { margin: 0; padding: 0; list-style: none; }
+  .list {
+    min-height: 26px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .dropping .list { background: var(--tint); }
 
   .item {
     display: grid;
-    grid-template-columns: 20px 20px 1fr 24px;
+    grid-template-columns: var(--rail) 1fr 22px;
     align-items: start;
-    gap: 10px;
-    padding: 9px 10px;
-    border-radius: 10px;
-    background: var(--card);
-    transition: background 140ms;
+    gap: 0 10px;
+    padding: 6px 0;
+    border-radius: 2px;
+    transition: background 120ms;
   }
 
-  .item:hover { background: var(--field); }
+  .item:hover { background: var(--tint); }
 
-  .item.dragging {
-    position: relative;
-    z-index: 6;
-    background: var(--card);
+  .item.lifted {
+    background: var(--paper);
     box-shadow: var(--lift);
   }
 
+  .rail {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 22px;
+  }
+
   .handle {
-    margin-top: 2px;
     padding: 0;
-    width: 20px; height: 20px;
+    width: 14px; height: 18px;
     display: grid;
     place-items: center;
     border: 0;
-    border-radius: 6px;
     background: none;
-    color: var(--muted);
+    color: var(--soft);
     cursor: grab;
     touch-action: none;
-    transition: opacity 140ms;
-  }
-
-  .item.dragging .handle { cursor: grabbing; }
-
-  @media (hover: hover) {
-    .handle, .del { opacity: 0; }
-    .item:hover .handle,
-    .item:hover .del,
-    .item:focus-within .handle,
-    .item:focus-within .del { opacity: 1; }
+    opacity: 0;
+    transition: opacity 120ms;
   }
 
   .slot {
-    margin-top: 1px;
     padding: 0;
-    width: 19px; height: 19px;
+    width: 17px; height: 17px;
     display: grid;
     place-items: center;
-    border: 1.6px solid color-mix(in srgb, var(--c) 42%, transparent);
-    border-radius: 7px;
+    border: 1.5px solid var(--soft);
+    border-radius: 2px;
     background: none;
     cursor: pointer;
-    transition: background 160ms, border-color 160ms;
+    transition: background 140ms, border-color 140ms;
   }
 
   .slot:hover { border-color: var(--c); }
@@ -341,136 +348,145 @@
   .item.done .slot { background: var(--c); border-color: var(--c); }
 
   .slot .icon svg {
-    stroke: var(--card);
+    stroke: var(--paper);
     opacity: 0;
-    transform: scale(.55);
-    transition: opacity 160ms, transform 160ms;
+    transition: opacity 140ms;
   }
 
-  .item.done .slot .icon svg { opacity: 1; transform: none; }
+  .item.done .slot .icon svg { opacity: 1; }
 
-  .textcell { min-width: 0; padding-top: 1px; }
+  .del {
+    padding: 0;
+    width: 22px; height: 22px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    background: none;
+    color: var(--soft);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 120ms, color 120ms;
+  }
+
+  .del:hover { color: var(--c2); }
+
+  @media (hover: hover) {
+    .item:hover .handle,
+    .item:hover .del,
+    .item:focus-within .handle,
+    .item:focus-within .del { opacity: 1; }
+  }
+
+  @media (hover: none) {
+    .handle, .del { opacity: .55; }
+  }
+
+  .textcell { min-width: 0; }
 
   .text {
     display: inline;
-    font-size: 14.5px;
-    line-height: 1.5;
-    color: var(--text);
+    font-size: 15px;
+    line-height: 1.47;
+    color: var(--ink);
     cursor: pointer;
     overflow-wrap: anywhere;
     background-image: linear-gradient(var(--c), var(--c));
     background-repeat: no-repeat;
     background-size: 0% 1.5px;
-    background-position: 0 .62em;
+    background-position: 0 .64em;
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
-    transition: background-size 320ms cubic-bezier(.2,.7,.3,1), color 320ms;
+    transition: background-size 300ms cubic-bezier(.2,.7,.3,1), color 300ms;
   }
 
-  .item.done .text { background-size: 100% 1.5px; color: var(--muted); }
+  .item.done .text { background-size: 100% 1.5px; color: var(--soft); }
 
   .edit {
     width: 100%;
     padding: 0;
     border: 0;
     border-bottom: 1.5px solid var(--c);
-    background: transparent;
-    font: inherit;
-    font-size: 14.5px;
-    line-height: 1.5;
-    color: var(--text);
+    background: none;
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1.47;
+    color: var(--ink);
     outline: none;
   }
 
-  .del {
-    margin-top: 2px;
-    padding: 0;
-    width: 24px; height: 20px;
-    display: grid;
-    place-items: center;
-    border: 0;
-    border-radius: 6px;
-    background: none;
-    color: var(--muted);
-    cursor: pointer;
-    transition: color 140ms, opacity 140ms;
+  /* Platzhalter, der die Lücke hält, während eine Zeile gezogen wird. */
+  .ghost {
+    border-radius: 2px;
+    background: var(--tint);
+    box-shadow: inset 0 0 0 1px var(--rule);
   }
-
-  .del:hover { color: var(--c-vital); }
 
   /* ---- Notizen ---- */
 
-  .notes {
-    margin-top: 22px;
-    padding: 4px 6px 10px;
-    border-radius: 16px;
-    background: var(--card);
-    box-shadow: var(--shadow);
-  }
+  .notes { padding-top: 34px; }
 
-  .notes header {
-    display: flex;
+  .notes > header {
+    display: grid;
+    grid-template-columns: var(--rail) 1fr auto;
     align-items: baseline;
-    gap: 9px;
-    padding: 12px 12px 6px;
+    gap: 0 10px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--rule);
   }
 
   .notes h2 {
     margin: 0;
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--soft);
+  }
+
+  .keeping {
+    font-size: 10px;
     letter-spacing: .1em;
     text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .saved {
-    margin-left: auto;
-    font-size: 11px;
-    color: var(--muted);
+    color: var(--soft);
     opacity: 0;
-    transition: opacity 400ms;
+    transition: opacity 500ms;
   }
 
-  .saved.show { opacity: 1; }
+  .keeping.show { opacity: 1; }
 
   #notes {
     display: block;
     width: 100%;
-    min-height: 96px;
-    padding: 4px 12px 8px;
+    min-height: 88px;
+    margin-top: 12px;
+    padding: 0 0 0 calc(var(--rail) + 10px);
     border: 0;
-    background: transparent;
-    font: inherit;
-    font-size: 14.5px;
+    background: none;
+    font-family: inherit;
+    font-size: 15px;
     line-height: 1.6;
-    color: var(--text);
+    color: var(--ink);
     resize: none;
     outline: none;
     overflow: hidden;
   }
 
-  #notes::placeholder { color: var(--muted); }
+  #notes::placeholder { color: var(--soft); }
 
-  /* ---- Hinweis, Fokus, Motion ---- */
+  /* ---- Hinweis, Fokus, Bewegung ---- */
 
   .warn {
-    margin: 14px 0 0;
-    padding: 11px 13px;
-    border-radius: 12px;
-    background: var(--card);
-    box-shadow: var(--shadow);
+    margin: 16px 0 0;
+    padding: 10px 0 10px calc(var(--rail) + 10px);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
     font-size: 13px;
-    line-height: 1.5;
-    color: var(--muted);
+    color: var(--soft);
   }
 
-  .warn a { color: var(--c-delegate); }
+  .warn a { color: var(--ink); }
 
-  :focus-visible {
-    outline: 2px solid var(--c, var(--text));
-    outline-offset: 2px;
-  }
+  :focus-visible { outline: 2px solid var(--c, var(--ink)); outline-offset: 2px; }
 
   .sr {
     position: absolute;
@@ -485,18 +501,17 @@
     * { transition-duration: 1ms !important; }
   }
 
-  @media (max-width: 460px) {
-    .app { padding: 0 13px 48px; }
-    .pill span { padding: 6px 10px 6px 8px; font-size: 12px; }
+  @media (max-width: 480px) {
+    :root { --rail: 40px; }
+    .sheet { padding: 0 16px 48px; }
+    .options { gap: 4px 14px; }
   }
 </style>
 </head>
 <body>
-  <div class="app">
-    <div class="topbar">
-      <div>
-        <span class="brand">To-do</span><span id="count" class="tally"></span>
-      </div>
+  <div class="sheet">
+    <div class="masthead">
+      <div><span class="wordmark">To-do</span><span id="stat" class="stat"></span></div>
       <div class="tools">
         <button type="button" id="exportBtn" class="linkbtn">Sichern</button>
         <button type="button" id="importBtn" class="linkbtn">Laden</button>
@@ -511,18 +526,29 @@
     </p>
 
     <div class="composer">
-      <input id="newTask" type="text" autocomplete="off" placeholder="Was steht an?" aria-label="Neue Aufgabe">
-      <div id="picker" class="picker" role="radiogroup" aria-label="Kategorie"></div>
+      <div class="field">
+        <span class="mark" aria-hidden="true">+</span>
+        <input id="newTask" type="text" autocomplete="off" placeholder="Was steht an?" aria-label="Neue Aufgabe">
+      </div>
+      <div class="choices">
+        <span class="mark" aria-hidden="true">In</span>
+        <div id="catOptions" class="options" role="radiogroup" aria-label="Kategorie"></div>
+      </div>
+      <div id="dayRow" class="choices days" hidden>
+        <span class="mark" aria-hidden="true">Am</span>
+        <div id="dayOptions" class="options" role="radiogroup" aria-label="Wochentag"></div>
+      </div>
     </div>
 
     <main id="sections"></main>
 
     <section class="notes">
       <header>
+        <span aria-hidden="true"></span>
         <h2>Notizen</h2>
-        <span id="saved" class="saved">gespeichert</span>
+        <span id="keeping" class="keeping">gespeichert</span>
       </header>
-      <textarea id="notes" placeholder="Freier Platz. Gedanken, Nummern, alles, was in keine Aufgabe passt."></textarea>
+      <textarea id="notes" placeholder="Freier Platz für alles, was in keine Aufgabe passt."></textarea>
     </section>
 
     <p id="live" class="sr" role="status" aria-live="polite"></p>
@@ -535,19 +561,31 @@
   var TASK_KEY = 'notion-todo-v1';
   var NOTE_KEY = 'notion-todo-notes-v1';
 
-  /* Die vier Kategorien. Reihenfolge hier = Reihenfolge auf dem Bildschirm. */
   var CATS = [
-    { key: 'quick',    n: 1, name: 'Schnell erledigt',  short: 'Schnell',    color: 'var(--c-quick)' },
-    { key: 'vital',    n: 2, name: 'Wirklich wichtig',  short: 'Wichtig',    color: 'var(--c-vital)' },
-    { key: 'later',    n: 3, name: 'Kann noch warten',  short: 'Später',     color: 'var(--c-later)' },
-    { key: 'delegate', n: 4, name: 'Delegier das',      short: 'Delegieren', color: 'var(--c-delegate)',
-      aside: 'nicht so wichtig' }
+    { key: 'quick',    n: 1, name: 'Schnell erledigt', qualifier: 'bitte jetzt', pick: 'Jetzt',       color: 'var(--c1)' },
+    { key: 'vital',    n: 2, name: 'Wirklich wichtig', qualifier: '',            pick: 'Wichtig',     color: 'var(--c2)' },
+    { key: 'later',    n: 3, name: 'Kann noch warten', qualifier: '',            pick: 'Später',      color: 'var(--c3)' },
+    { key: 'delegate', n: 4, name: 'Delegier das',     qualifier: 'nicht so wichtig',
+      pick: 'Delegieren', color: 'var(--c4)' }
   ];
 
+  var DAYS = [
+    { key: 'mo', name: 'Montag',     pick: 'Mo' },
+    { key: 'di', name: 'Dienstag',   pick: 'Di' },
+    { key: 'mi', name: 'Mittwoch',   pick: 'Mi' },
+    { key: 'do', name: 'Donnerstag', pick: 'Do' },
+    { key: 'fr', name: 'Freitag',    pick: 'Fr' }
+  ];
+
+  // Ablagefächer in Bildschirmreihenfolge: 1, 2, dann Mo bis Fr, dann 4.
+  var BINS = [];
+
   var sectionsEl = document.getElementById('sections');
-  var pickerEl   = document.getElementById('picker');
+  var catOptions = document.getElementById('catOptions');
+  var dayOptions = document.getElementById('dayOptions');
+  var dayRow     = document.getElementById('dayRow');
   var newTask    = document.getElementById('newTask');
-  var countEl    = document.getElementById('count');
+  var statEl     = document.getElementById('stat');
   var clearBtn   = document.getElementById('clearDone');
   var liveEl     = document.getElementById('live');
   var warnEl     = document.getElementById('warn');
@@ -556,31 +594,23 @@
   var importBtn  = document.getElementById('importBtn');
   var importFile = document.getElementById('importFile');
   var notesEl    = document.getElementById('notes');
-  var savedEl    = document.getElementById('saved');
+  var keepingEl  = document.getElementById('keeping');
 
-  var ICON_DOTS  = '<svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor"><circle cx="2.5" cy="4" r="1.15"/><circle cx="7.5" cy="4" r="1.15"/><circle cx="2.5" cy="8" r="1.15"/><circle cx="7.5" cy="8" r="1.15"/><circle cx="2.5" cy="12" r="1.15"/><circle cx="7.5" cy="12" r="1.15"/></svg>';
-  var ICON_CHECK = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.4 4.7 9 10 3.2"/></svg>';
-  var ICON_CROSS = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 2.5 9.5 9.5M9.5 2.5 2.5 9.5"/></svg>';
+  var ICON_GRIP  = '<svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="1.6" cy="3" r="1.05"/><circle cx="6.4" cy="3" r="1.05"/><circle cx="1.6" cy="7" r="1.05"/><circle cx="6.4" cy="7" r="1.05"/><circle cx="1.6" cy="11" r="1.05"/><circle cx="6.4" cy="11" r="1.05"/></svg>';
+  var ICON_CHECK = '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.4 4.7 9 10 3.2"/></svg>';
+  var ICON_CROSS = '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 2.5 9.5 9.5M9.5 2.5 2.5 9.5"/></svg>';
+
+  var MOTION_OK = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   var tasks = readTasks();
   var drag = null;
   var noteTimer = null;
 
-  /* ---------- Speichern ---------- */
+  /* ---------- Daten ---------- */
 
-  function storageWorks() {
-    try {
-      localStorage.setItem('__probe', '1');
-      localStorage.removeItem('__probe');
-      return true;
-    } catch (err) {
-      return false;
-    }
-  }
-
-  function catByKey(key) {
-    for (var i = 0; i < CATS.length; i++) {
-      if (CATS[i].key === key) return CATS[i];
+  function byKey(list, key) {
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].key === key) return list[i];
     }
     return null;
   }
@@ -589,18 +619,26 @@
     return t && typeof t.id === 'string' && typeof t.text === 'string' && typeof t.done === 'boolean';
   }
 
-  /* Bringt jede gespeicherte Aufgabe auf die aktuelle Form. Aus der früheren
-     Eisenhower-Fassung übersetzt: wichtig+dringend wird "wirklich wichtig",
-     der Rest verteilt sich sinngemäß. */
+  /* Bringt gespeicherte Aufgaben auf die aktuelle Form. Aus der Eisenhower-
+     Fassung übersetzt: wichtig+dringend wird 2, wichtig allein wird 3,
+     der Rest wird 4. Wer in 3 landet und keinen Tag hat, bekommt Montag. */
   function normalize(t) {
-    var key = catByKey(t.cat) ? t.cat : null;
+    var cat = byKey(CATS, t.cat) ? t.cat : null;
 
-    if (!key && typeof t.important === 'boolean') {
-      if (t.important) key = t.urgent ? 'vital' : 'later';
-      else key = 'delegate';
+    if (!cat && typeof t.important === 'boolean') {
+      if (t.important) cat = t.urgent ? 'vital' : 'later';
+      else cat = 'delegate';
     }
 
-    return { id: t.id, text: t.text, done: t.done, cat: key || 'later' };
+    cat = cat || 'later';
+
+    return {
+      id: t.id,
+      text: t.text,
+      done: t.done,
+      cat: cat,
+      day: cat === 'later' ? (byKey(DAYS, t.day) ? t.day : 'mo') : null
+    };
   }
 
   function readTasks() {
@@ -611,6 +649,16 @@
       return Array.isArray(parsed) ? parsed.filter(isTask).map(normalize) : [];
     } catch (err) {
       return [];
+    }
+  }
+
+  function storageWorks() {
+    try {
+      localStorage.setItem('__probe', '1');
+      localStorage.removeItem('__probe');
+      return true;
+    } catch (err) {
+      return false;
     }
   }
 
@@ -625,8 +673,8 @@
   function saveNotes() {
     try {
       localStorage.setItem(NOTE_KEY, notesEl.value);
-      savedEl.classList.add('show');
-      setTimeout(function () { savedEl.classList.remove('show'); }, 1400);
+      keepingEl.classList.add('show');
+      setTimeout(function () { keepingEl.classList.remove('show'); }, 1500);
     } catch (err) {
       showWarning();
     }
@@ -643,91 +691,6 @@
 
   /* ---------- Gerüst ---------- */
 
-  function buildPicker() {
-    CATS.forEach(function (cat, index) {
-      var label = document.createElement('label');
-      label.className = 'pill';
-      label.style.setProperty('--c', cat.color);
-
-      var input = document.createElement('input');
-      input.type = 'radio';
-      input.name = 'cat';
-      input.value = cat.key;
-      input.checked = index === 0;
-
-      var face = document.createElement('span');
-      face.dataset.n = String(cat.n);
-      face.appendChild(document.createTextNode(cat.short));
-
-      input.addEventListener('change', function () {
-        newTask.style.setProperty('--pick', cat.color);
-      });
-
-      label.appendChild(input);
-      label.appendChild(face);
-      pickerEl.appendChild(label);
-
-      cat.inputEl = input;
-    });
-
-    newTask.style.setProperty('--pick', CATS[0].color);
-  }
-
-  function buildSections() {
-    CATS.forEach(function (cat) {
-      var section = document.createElement('section');
-      section.className = 'section';
-      section.dataset.cat = cat.key;
-      section.style.setProperty('--c', cat.color);
-
-      var head = document.createElement('header');
-
-      var badge = document.createElement('span');
-      badge.className = 'badge';
-      badge.setAttribute('aria-hidden', 'true');
-      badge.textContent = String(cat.n);
-
-      var title = document.createElement('h2');
-      title.id = 'head-' + cat.key;
-      title.textContent = cat.name;
-
-      head.appendChild(badge);
-      head.appendChild(title);
-
-      if (cat.aside) {
-        var aside = document.createElement('span');
-        aside.className = 'aside';
-        aside.textContent = cat.aside;
-        head.appendChild(aside);
-      }
-
-      var count = document.createElement('span');
-      count.className = 'count';
-      count.hidden = true;
-      head.appendChild(count);
-
-      var list = document.createElement('ul');
-      list.className = 'list';
-      list.setAttribute('aria-labelledby', title.id);
-
-      var empty = document.createElement('p');
-      empty.className = 'empty';
-      empty.textContent = 'Noch nichts hier.';
-
-      section.appendChild(head);
-      section.appendChild(list);
-      section.appendChild(empty);
-      sectionsEl.appendChild(section);
-
-      cat.el = section;
-      cat.listEl = list;
-      cat.countEl = count;
-      cat.emptyEl = empty;
-    });
-  }
-
-  /* ---------- Aufgabenzeile ---------- */
-
   function icon(markup) {
     var span = document.createElement('span');
     span.className = 'icon';
@@ -736,17 +699,154 @@
     return span;
   }
 
+  function option(group, entry, checked, onPick) {
+    var label = document.createElement('label');
+    label.className = 'opt';
+
+    var input = document.createElement('input');
+    input.type = 'radio';
+    input.name = group;
+    input.value = entry.key;
+    input.checked = checked;
+
+    var face = document.createElement('span');
+    face.textContent = entry.pick;
+
+    input.addEventListener('change', function () { onPick(entry); });
+
+    label.appendChild(input);
+    label.appendChild(face);
+
+    entry.inputEl = input;
+    return label;
+  }
+
+  function buildChoices() {
+    CATS.forEach(function (cat, index) {
+      var label = option('cat', cat, index === 0, pickCat);
+      label.style.setProperty('--c', cat.color);
+      catOptions.appendChild(label);
+    });
+
+    DAYS.forEach(function (day) {
+      var label = option('day', day, day.key === todayKey(), pickDay);
+      label.style.setProperty('--c', 'var(--c3)');
+      dayOptions.appendChild(label);
+    });
+  }
+
+  // Am Wochenende ist Montag der nächste sinnvolle Vorschlag.
+  function todayKey() {
+    var index = new Date().getDay() - 1;
+    return index >= 0 && index <= 4 ? DAYS[index].key : 'mo';
+  }
+
+  function buildSections() {
+    CATS.forEach(function (cat) {
+      var section = document.createElement('section');
+      section.className = 'section';
+      section.style.setProperty('--c', cat.color);
+
+      var head = document.createElement('header');
+
+      var numeral = document.createElement('span');
+      numeral.className = 'numeral';
+      numeral.setAttribute('aria-hidden', 'true');
+      numeral.textContent = String(cat.n);
+
+      var title = document.createElement('h2');
+      title.id = 'head-' + cat.key;
+      title.textContent = cat.name;
+
+      if (cat.qualifier) {
+        var qualifier = document.createElement('span');
+        qualifier.className = 'qualifier';
+        qualifier.textContent = ', ' + cat.qualifier;
+        title.appendChild(qualifier);
+      }
+
+      var total = document.createElement('span');
+      total.className = 'total';
+      total.hidden = true;
+
+      head.appendChild(numeral);
+      head.appendChild(title);
+      head.appendChild(total);
+      section.appendChild(head);
+
+      if (cat.key === 'later') {
+        DAYS.forEach(function (day) { section.appendChild(buildDay(cat, day)); });
+      } else {
+        section.appendChild(makeList(cat, null, section, title.id));
+      }
+
+      sectionsEl.appendChild(section);
+      cat.totalEl = total;
+    });
+  }
+
+  function buildDay(cat, day) {
+    var wrap = document.createElement('div');
+    wrap.className = 'day';
+
+    var head = document.createElement('header');
+
+    var label = document.createElement('span');
+    label.className = 'label';
+    label.id = 'day-' + day.key;
+    label.textContent = day.pick;
+
+    var hair = document.createElement('span');
+    hair.className = 'hair';
+
+    var count = document.createElement('span');
+    count.className = 'count';
+    count.hidden = true;
+
+    head.appendChild(label);
+    head.appendChild(hair);
+    head.appendChild(count);
+    wrap.appendChild(head);
+    wrap.appendChild(makeList(cat, day, wrap, label.id));
+
+    day.countEl = count;
+    return wrap;
+  }
+
+  /* Der Ablagebereich ist das ganze Element - so bleibt zwischen Überschrift
+     und erster Zeile keine tote Zone, in der das Ziehen ins Leere greift. */
+  function makeList(cat, day, zoneEl, labelledBy) {
+    var list = document.createElement('ul');
+    list.className = 'list';
+    list.setAttribute('aria-labelledby', labelledBy);
+
+    BINS.push({ cat: cat, day: day, zoneEl: zoneEl, listEl: list });
+    return list;
+  }
+
+  function binOfList(list) {
+    for (var i = 0; i < BINS.length; i++) {
+      if (BINS[i].listEl === list) return BINS[i];
+    }
+    return null;
+  }
+
+  /* ---------- Zeile ---------- */
+
   function buildRow(task) {
     var li = document.createElement('li');
     li.className = task.done ? 'item done' : 'item';
     li.dataset.id = task.id;
+
+    var rail = document.createElement('div');
+    rail.className = 'rail';
 
     var handle = document.createElement('button');
     handle.type = 'button';
     handle.className = 'handle';
     handle.setAttribute('aria-label', 'Verschieben: ' + task.text);
     handle.title = 'Ziehen, oder mit Pfeil hoch/runter verschieben';
-    handle.appendChild(icon(ICON_DOTS));
+    handle.appendChild(icon(ICON_GRIP));
     handle.addEventListener('pointerdown', beginDrag);
     handle.addEventListener('keydown', moveByKey);
 
@@ -758,6 +858,9 @@
     slot.setAttribute('aria-label', task.text);
     slot.appendChild(icon(ICON_CHECK));
     slot.addEventListener('click', function () { toggle(task.id); });
+
+    rail.appendChild(handle);
+    rail.appendChild(slot);
 
     var cell = document.createElement('div');
     cell.className = 'textcell';
@@ -787,23 +890,31 @@
     del.appendChild(icon(ICON_CROSS));
     del.addEventListener('click', function () { remove(task.id); });
 
-    li.appendChild(handle);
-    li.appendChild(slot);
+    li.appendChild(rail);
     li.appendChild(cell);
     li.appendChild(del);
     return li;
   }
 
+  function binFor(task) {
+    for (var i = 0; i < BINS.length; i++) {
+      var bin = BINS[i];
+      if (bin.cat.key !== task.cat) continue;
+      if (bin.day && bin.day.key !== task.day) continue;
+      return bin;
+    }
+    return BINS[0];
+  }
+
   function render() {
-    var rows = {};
-    CATS.forEach(function (cat) { rows[cat.key] = []; });
+    var buckets = BINS.map(function () { return []; });
 
     tasks.forEach(function (task) {
-      rows[task.cat].push(buildRow(task));
+      buckets[BINS.indexOf(binFor(task))].push(buildRow(task));
     });
 
-    CATS.forEach(function (cat) {
-      cat.listEl.replaceChildren.apply(cat.listEl, rows[cat.key]);
+    BINS.forEach(function (bin, index) {
+      bin.listEl.replaceChildren.apply(bin.listEl, buckets[index]);
     });
 
     updateMeta();
@@ -811,75 +922,89 @@
 
   function updateMeta() {
     var open = 0, done = 0;
-    var perCat = {};
-    CATS.forEach(function (cat) { perCat[cat.key] = { open: 0, total: 0 }; });
+    var perCat = {}, perDay = {};
+
+    CATS.forEach(function (cat) { perCat[cat.key] = 0; });
+    DAYS.forEach(function (day) { perDay[day.key] = 0; });
 
     tasks.forEach(function (task) {
-      if (task.done) done++; else open++;
-      perCat[task.cat].total++;
-      if (!task.done) perCat[task.cat].open++;
+      if (task.done) { done++; return; }
+      open++;
+      perCat[task.cat]++;
+      if (task.day) perDay[task.day]++;
     });
 
     CATS.forEach(function (cat) {
-      var stat = perCat[cat.key];
-      cat.countEl.hidden = stat.open === 0;
-      cat.countEl.textContent = String(stat.open);
-      cat.emptyEl.hidden = stat.total > 0;
+      cat.totalEl.hidden = perCat[cat.key] === 0;
+      cat.totalEl.textContent = String(perCat[cat.key]);
     });
 
-    if (tasks.length === 0) countEl.textContent = '';
-    else if (done === 0) countEl.textContent = open + ' offen';
-    else countEl.textContent = open + ' offen · ' + done + ' erledigt';
+    DAYS.forEach(function (day) {
+      day.countEl.hidden = perDay[day.key] === 0;
+      day.countEl.textContent = String(perDay[day.key]);
+    });
+
+    if (tasks.length === 0) statEl.textContent = '';
+    else if (done === 0) statEl.textContent = open + ' offen';
+    else statEl.textContent = open + ' offen · ' + done + ' erledigt';
 
     clearBtn.hidden = done === 0;
   }
 
-  function announce(message) {
-    liveEl.textContent = message;
-  }
+  function announce(message) { liveEl.textContent = message; }
 
-  function rowById(id) {
-    return sectionsEl.querySelector('[data-id="' + id + '"]');
+  function taskById(id) {
+    for (var i = 0; i < tasks.length; i++) {
+      if (tasks[i].id === id) return tasks[i];
+    }
+    return null;
   }
 
   /* ---------- Aktionen ---------- */
 
-  function pick(cat) {
-    cat.inputEl.checked = true;
-    newTask.style.setProperty('--pick', cat.color);
+  function pickCat(cat) {
+    dayRow.hidden = cat.key !== 'later';
     announce(cat.name + ' gewählt.');
   }
 
-  function selectedCat() {
-    for (var i = 0; i < CATS.length; i++) {
-      if (CATS[i].inputEl.checked) return CATS[i];
+  function pickDay(day) { announce(day.name + ' gewählt.'); }
+
+  function selected(list) {
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].inputEl.checked) return list[i];
     }
-    return CATS[0];
+    return list[0];
   }
 
   function add(value) {
     var text = value.trim();
     if (!text) return;
 
-    var cat = selectedCat();
-    tasks.push({ id: newId(), text: text, done: false, cat: cat.key });
+    var cat = selected(CATS);
+    var day = cat.key === 'later' ? selected(DAYS) : null;
+
+    tasks.push({
+      id: newId(),
+      text: text,
+      done: false,
+      cat: cat.key,
+      day: day ? day.key : null
+    });
+
     save();
     render();
-    announce('Hinzugefügt unter ' + cat.name);
+    announce('Hinzugefügt: ' + cat.name + (day ? ', ' + day.name : ''));
   }
 
   // Nur die betroffene Zeile ändern, damit der Strich sich zeichnen kann.
   function toggle(id) {
-    var task = null;
-    for (var i = 0; i < tasks.length; i++) {
-      if (tasks[i].id === id) { task = tasks[i]; break; }
-    }
+    var task = taskById(id);
     if (!task) return;
 
     task.done = !task.done;
     save();
 
-    var li = rowById(id);
+    var li = sectionsEl.querySelector('[data-id="' + id + '"]');
     if (li) {
       li.classList.toggle('done', task.done);
       li.querySelector('.slot').setAttribute('aria-checked', String(task.done));
@@ -925,19 +1050,18 @@
     input.select();
   }
 
-  /* ---------- Reihenfolge und Kategorie ---------- */
-
-  // Übernimmt die sichtbare Anordnung in die Daten: Abschnitt bestimmt die Kategorie.
+  // Übernimmt die sichtbare Anordnung: Fach bestimmt Kategorie und Tag.
   function commitOrder() {
-    var byId = {};
-    tasks.forEach(function (task) { byId[task.id] = task; });
+    var index = {};
+    tasks.forEach(function (task) { index[task.id] = task; });
 
     var next = [];
-    CATS.forEach(function (cat) {
-      Array.prototype.forEach.call(cat.listEl.children, function (li) {
-        var task = byId[li.dataset.id];
+    BINS.forEach(function (bin) {
+      Array.prototype.forEach.call(bin.listEl.children, function (node) {
+        var task = index[node.dataset.id];
         if (!task) return;
-        task.cat = cat.key;
+        task.cat = bin.cat.key;
+        task.day = bin.day ? bin.day.key : null;
         next.push(task);
       });
     });
@@ -947,124 +1071,251 @@
     updateMeta();
   }
 
-  function catOfElement(li) {
-    var section = li.closest('.section');
-    for (var i = 0; i < CATS.length; i++) {
-      if (CATS[i].el === section) return CATS[i];
-    }
-    return null;
+  /* ---------- Ziehen ----------
+     Die gezogene Zeile wird aus dem Textfluss genommen (position: fixed) und
+     ein Platzhalter hält ihre Lücke. Dadurch verschiebt sich beim Ziehen nichts
+     mehr unter dem Zeiger, und das Verhaken zwischen zwei Zeilen entfällt. */
+
+  function rowsInPlay() {
+    return Array.prototype.slice.call(sectionsEl.querySelectorAll('.item'));
   }
 
-  // Zeile, vor der die gezogene landen soll - null heißt: ans Ende.
-  function dropTarget(list, pointerY, dragged) {
+  // Bewegt den Platzhalter und lässt die verdrängten Zeilen weich nachrücken.
+  function placeGhost(list, before) {
+    if (drag.ghost.parentNode === list && drag.ghost.nextElementSibling === before) return;
+
+    var rows = MOTION_OK ? rowsInPlay() : [];
+
+    // Erst die sichtbare Lage merken, dann laufende Bewegungen abräumen -
+    // sonst fließen sie in die nächste Messung ein und die Zeilen driften.
+    var from = rows.map(function (row) { return row.getBoundingClientRect().top; });
+
+    rows.forEach(function (row) {
+      row.style.transition = 'none';
+      row.style.transform = '';
+    });
+
+    list.insertBefore(drag.ghost, before);
+
+    var to = rows.map(function (row) { return row.getBoundingClientRect().top; });
+
+    rows.forEach(function (row, i) {
+      if (from[i] === to[i]) return;
+      row.style.transform = 'translateY(' + (from[i] - to[i]) + 'px)';
+
+      requestAnimationFrame(function () {
+        row.style.transition = 'transform 170ms cubic-bezier(.2,.7,.3,1)';
+        row.style.transform = '';
+      });
+    });
+  }
+
+  function clearShifts() {
+    rowsInPlay().forEach(function (row) {
+      row.style.transition = '';
+      row.style.transform = '';
+    });
+  }
+
+  // Das Fach unter dem Zeiger - oder, wenn keins passt, das nächstgelegene.
+  function binAt(y) {
+    var nearest = null, gap = Infinity;
+
+    for (var i = 0; i < BINS.length; i++) {
+      var box = BINS[i].zoneEl.getBoundingClientRect();
+      if (y >= box.top && y <= box.bottom) return BINS[i];
+
+      var distance = y < box.top ? box.top - y : y - box.bottom;
+      if (distance < gap) { gap = distance; nearest = BINS[i]; }
+    }
+
+    return nearest;
+  }
+
+  function referenceRow(list, y) {
     for (var i = 0; i < list.children.length; i++) {
       var row = list.children[i];
-      if (row === dragged) continue;
+      if (row === drag.ghost) continue;
       var box = row.getBoundingClientRect();
-      if (pointerY < box.top + box.height / 2) return row;
+      if (y < box.top + box.height / 2) return row;
     }
     return null;
   }
 
-  function catUnder(x, y) {
-    for (var i = 0; i < CATS.length; i++) {
-      var box = CATS[i].el.getBoundingClientRect();
-      if (x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) return CATS[i];
+  function updateTarget() {
+    var bin = binAt(drag.y);
+    if (!bin) return;
+
+    if (drag.bin !== bin) {
+      if (drag.bin) drag.bin.zoneEl.classList.remove('dropping');
+      bin.zoneEl.classList.add('dropping');
+      drag.li.style.setProperty('--c', bin.cat.color);
+      drag.bin = bin;
     }
-    return null;
+
+    placeGhost(bin.listEl, referenceRow(bin.listEl, drag.y));
   }
 
-  function highlight(cat) {
-    CATS.forEach(function (c) { c.el.classList.toggle('over', c === cat); });
-  }
+  function autoScroll() {
+    if (!drag) return;
 
-  // Misst die Ruhelage der Zeile neu und setzt sie unter den Zeiger. Dadurch
-  // stimmt die Position auch nach Umhängen oder Scrollen.
-  function follow(pointerY) {
-    var li = drag.li;
-    li.style.transform = '';
-    var box = li.getBoundingClientRect();
-    li.style.transform = 'translateY(' + (pointerY - drag.grabY - box.top) + 'px)';
+    var edge = 80;
+    var speed = 0;
+
+    if (drag.y < edge) speed = -Math.ceil((edge - drag.y) / 6);
+    else if (drag.y > window.innerHeight - edge) speed = Math.ceil((drag.y - (window.innerHeight - edge)) / 6);
+
+    if (speed) {
+      window.scrollBy(0, speed);
+      updateTarget();
+    }
+
+    drag.raf = requestAnimationFrame(autoScroll);
   }
 
   function beginDrag(e) {
     if (e.button && e.button !== 0) return;
+    if (drag) return;
     e.preventDefault();
 
     var handle = e.currentTarget;
     var li = handle.closest('.item');
+    var box = li.getBoundingClientRect();
+    var origin = binOfList(li.parentNode);
+
+    var ghost = document.createElement('li');
+    ghost.className = 'ghost';
+    ghost.style.height = box.height + 'px';
+
+    drag = {
+      handle: handle,
+      li: li,
+      ghost: ghost,
+      bin: null,
+      originX: e.clientX,
+      originY: e.clientY,
+      x: e.clientX,
+      y: e.clientY,
+      raf: 0,
+      landing: false
+    };
+
+    li.parentNode.insertBefore(ghost, li);
+
+    li.style.setProperty('--c', origin ? origin.cat.color : CATS[0].color);
+    li.style.position = 'fixed';
+    li.style.left = box.left + 'px';
+    li.style.top = box.top + 'px';
+    li.style.width = box.width + 'px';
+    li.style.margin = '0';
+    li.style.pointerEvents = 'none';
+    li.style.zIndex = '60';
+    li.classList.add('lifted');
+    document.body.appendChild(li);
+    document.body.classList.add('dragging');
+
     handle.setPointerCapture(e.pointerId);
-
-    drag = { handle: handle, li: li, grabY: e.clientY - li.getBoundingClientRect().top };
-    li.classList.add('dragging');
-
     handle.addEventListener('pointermove', onDrag);
     handle.addEventListener('pointerup', endDrag);
     handle.addEventListener('pointercancel', endDrag);
+
+    updateTarget();
+    drag.raf = requestAnimationFrame(autoScroll);
   }
 
   function onDrag(e) {
-    if (!drag) return;
+    if (!drag || drag.landing) return;
 
-    // Seite mitziehen, wenn der Zeiger an den Fensterrand kommt.
-    if (e.clientY < 70) window.scrollBy(0, -14);
-    else if (e.clientY > window.innerHeight - 70) window.scrollBy(0, 14);
+    drag.x = e.clientX;
+    drag.y = e.clientY;
+    drag.li.style.transform =
+      'translate(' + (drag.x - drag.originX) + 'px,' + (drag.y - drag.originY) + 'px)';
 
-    var cat = catUnder(e.clientX, e.clientY) || catOfElement(drag.li);
-    if (cat) {
-      highlight(cat);
-      var target = dropTarget(cat.listEl, e.clientY, drag.li);
-      if (drag.li.parentNode !== cat.listEl || target !== drag.li.nextElementSibling) {
-        cat.listEl.insertBefore(drag.li, target);
-      }
-    }
-
-    follow(e.clientY);
+    updateTarget();
   }
 
   function endDrag(e) {
-    if (!drag) return;
+    if (!drag || drag.landing) return;
 
-    drag.li.style.transform = '';
-    drag.li.classList.remove('dragging');
+    drag.landing = true;
+    cancelAnimationFrame(drag.raf);
+
     drag.handle.removeEventListener('pointermove', onDrag);
     drag.handle.removeEventListener('pointerup', endDrag);
     drag.handle.removeEventListener('pointercancel', endDrag);
     if (drag.handle.hasPointerCapture(e.pointerId)) drag.handle.releasePointerCapture(e.pointerId);
 
-    highlight(null);
-    drag = null;
-    commitOrder();
+    var target = drag.ghost.getBoundingClientRect();
+    var current = drag.li.getBoundingClientRect();
+
+    if (!MOTION_OK || (Math.abs(target.top - current.top) < 1 && Math.abs(target.left - current.left) < 1)) {
+      settle();
+      return;
+    }
+
+    // Zum Schluss rutscht die Zeile sichtbar in ihre Lücke.
+    drag.li.style.transition = 'transform 160ms cubic-bezier(.2,.7,.3,1)';
+    drag.li.style.transform =
+      'translate(' + (target.left - current.left + (drag.x - drag.originX)) + 'px,' +
+                     (target.top - current.top + (drag.y - drag.originY)) + 'px)';
+
+    setTimeout(settle, 170);
   }
 
-  /* Tastatur: hoch/runter sortiert im Abschnitt und springt an dessen Rand
-     in den nächsten - so ist jede Kategorie ohne Maus erreichbar. */
+  function settle() {
+    if (!drag) return;
+
+    var li = drag.li;
+    var ghost = drag.ghost;
+
+    li.removeAttribute('style');
+    li.classList.remove('lifted');
+    ghost.parentNode.insertBefore(li, ghost);
+    ghost.remove();
+
+    if (drag.bin) drag.bin.zoneEl.classList.remove('dropping');
+    document.body.classList.remove('dragging');
+
+    var landedIn = drag.bin;
+    drag = null;
+
+    clearShifts();
+    commitOrder();
+
+    if (landedIn) {
+      announce(landedIn.cat.name + (landedIn.day ? ', ' + landedIn.day.name : ''));
+    }
+  }
+
+  /* Tastatur: hoch/runter sortiert im Fach und springt an dessen Rand ins
+     nächste - damit ist jede Kategorie und jeder Tag ohne Maus erreichbar. */
   function moveByKey(e) {
     if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
     e.preventDefault();
 
     var handle = e.currentTarget;
     var li = handle.closest('.item');
-    var cat = catOfElement(li);
-    if (!cat) return;
+    var list = li.parentNode;
+    var bin = binOfList(list);
+    if (!bin) return;
 
-    var rows = Array.prototype.slice.call(cat.listEl.children);
+    var rows = Array.prototype.slice.call(list.children);
     var index = rows.indexOf(li);
     var step = e.key === 'ArrowUp' ? -1 : 1;
     var next = index + step;
 
     if (next >= 0 && next < rows.length) {
       var mate = rows[next];
-      cat.listEl.insertBefore(li, step < 0 ? mate : mate.nextElementSibling);
-      announce('Position ' + (next + 1) + ' von ' + rows.length + ' in ' + cat.name);
+      list.insertBefore(li, step < 0 ? mate : mate.nextElementSibling);
+      announce('Position ' + (next + 1) + ' von ' + rows.length);
     } else {
-      var neighbour = CATS[CATS.indexOf(cat) + step];
+      var neighbour = BINS[BINS.indexOf(bin) + step];
       if (!neighbour) return;
 
       if (step > 0) neighbour.listEl.insertBefore(li, neighbour.listEl.firstChild);
       else neighbour.listEl.appendChild(li);
 
-      announce('Verschoben nach ' + neighbour.name);
+      announce(neighbour.cat.name + (neighbour.day ? ', ' + neighbour.day.name : ''));
     }
 
     commitOrder();
@@ -1091,7 +1342,7 @@
   /* ---------- Sichern & Laden ---------- */
 
   function exportAll() {
-    var payload = { version: 2, tasks: tasks, notes: notesEl.value };
+    var payload = { version: 3, tasks: tasks, notes: notesEl.value };
     var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var link = document.createElement('a');
@@ -1156,15 +1407,15 @@
     newTask.value = '';
   });
 
-  // Alt + 1 bis 4 wählt die Kategorie, ohne die Hand von der Tastatur zu nehmen.
-  // e.code statt e.key, damit es auf jeder Tastaturbelegung dieselbe Taste ist.
+  // Alt + 1 bis 4 wählt die Kategorie. e.code, damit die Belegung egal ist.
   document.addEventListener('keydown', function (e) {
     if (!e.altKey && !e.metaKey && !e.ctrlKey) return;
     var index = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code);
     if (index === -1) return;
 
     e.preventDefault();
-    pick(CATS[index]);
+    CATS[index].inputEl.checked = true;
+    pickCat(CATS[index]);
     newTask.focus();
   });
 
@@ -1175,7 +1426,6 @@
   });
 
   exportBtn.addEventListener('click', exportAll);
-
   importBtn.addEventListener('click', function () { importFile.click(); });
 
   importFile.addEventListener('change', function () {
@@ -1194,17 +1444,15 @@
   window.addEventListener('resize', growNotes);
 
   if (!storageWorks()) showWarning();
-  buildPicker();
+  buildChoices();
   buildSections();
   render();
   loadNotes();
 
-  // Im eigenen App-Fenster gleich tippbereit sein.
   if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
     newTask.focus();
   }
 
-  // Macht die App offline lauffähig. Über file:// gibt es das nicht.
   var secure = location.protocol === 'https:' || location.hostname === 'localhost';
   if ('serviceWorker' in navigator && secure) {
     window.addEventListener('load', function () {
