@@ -22,6 +22,13 @@
     --rule:   #E9E9E6;
     --stroke: #22436B;
     --shadow: rgba(0,0,0,.12);
+    --tint:   rgba(34,67,107,.05);
+
+    --q1: #22436B;
+    --q2: #4A7397;
+    --q3: #7E96AC;
+    --q4: #A6ABB1;
+
     --serif: ui-serif, Charter, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
     --sans:  ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
@@ -34,6 +41,12 @@
       --rule:   #323231;
       --stroke: #86ABDA;
       --shadow: rgba(0,0,0,.5);
+      --tint:   rgba(134,171,218,.07);
+
+      --q1: #8FB6E6;
+      --q2: #7BA0C6;
+      --q3: #6E8AA6;
+      --q4: #7C8188;
     }
   }
 
@@ -53,9 +66,9 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
-    max-width: 720px;
+    max-width: 1000px;
     margin: 0 auto;
-    padding: 14px 16px;
+    padding: 14px 18px 16px;
   }
 
   /* ---- Kopfzeile ---- */
@@ -66,18 +79,14 @@
     justify-content: space-between;
     align-items: baseline;
     gap: 6px 12px;
-    padding-bottom: 9px;
-    border-bottom: 1px solid var(--rule);
+    padding-bottom: 10px;
     font-size: 11px;
     letter-spacing: .07em;
     text-transform: uppercase;
     color: var(--muted);
   }
 
-  .tools {
-    display: flex;
-    gap: 14px;
-  }
+  .tools { display: flex; gap: 14px; }
 
   .linkbtn {
     padding: 0;
@@ -93,10 +102,85 @@
   .linkbtn:hover,
   .linkbtn:focus-visible { opacity: 1; color: var(--ink); }
 
+  /* ---- Matrix ---- */
+
+  .matrix {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 18px 30px;
+  }
+
+  /* Senkrechte Achse zwischen den Spalten - die waagerechte zeichnen
+     bereits die farbigen Oberkanten der unteren beiden Felder. */
+  .matrix::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: var(--rule);
+    pointer-events: none;
+  }
+
+  .pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    --accent: var(--stroke);
+    border-top: 2px solid var(--accent);
+    padding-top: 8px;
+    transition: background 160ms;
+  }
+
+  .pane.over { background: var(--tint); }
+
+  .pane[data-key="q1"] { --accent: var(--q1); }
+  .pane[data-key="q2"] { --accent: var(--q2); }
+  .pane[data-key="q3"] { --accent: var(--q3); }
+  .pane[data-key="q4"] { --accent: var(--q4); }
+
+  .pane header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 0 2px 7px;
+  }
+
+  .pane h2 {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .tally {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+  }
+
+  .hint {
+    margin-left: auto;
+    font-size: 10px;
+    letter-spacing: .04em;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   /* ---- Liste ---- */
 
   .list {
     flex: 1;
+    min-height: 44px;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -104,15 +188,15 @@
     overscroll-behavior: contain;
   }
 
-  .list::-webkit-scrollbar { width: 8px; }
+  .list::-webkit-scrollbar { width: 7px; }
   .list::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 4px; }
 
   .item {
     display: grid;
-    grid-template-columns: 18px 18px 1fr 22px;
+    grid-template-columns: 16px 17px 1fr 20px;
     align-items: start;
-    gap: 10px;
-    padding: 9px 2px;
+    gap: 8px;
+    padding: 7px 2px;
     border-bottom: 1px solid var(--rule);
     background: var(--paper);
   }
@@ -132,8 +216,8 @@
   .handle {
     margin-top: 3px;
     padding: 0;
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 17px;
     display: grid;
     place-items: center;
     border: 0;
@@ -159,8 +243,8 @@
   .slot {
     margin-top: 2px;
     padding: 0;
-    width: 17px;
-    height: 17px;
+    width: 16px;
+    height: 16px;
     display: grid;
     place-items: center;
     border: 1.5px solid var(--muted);
@@ -170,11 +254,11 @@
     transition: background 150ms, border-color 150ms;
   }
 
-  .slot:hover { border-color: var(--ink); }
+  .slot:hover { border-color: var(--accent); }
 
   .item.done .slot {
-    background: var(--stroke);
-    border-color: var(--stroke);
+    background: var(--accent);
+    border-color: var(--accent);
   }
 
   .slot .icon svg {
@@ -193,12 +277,12 @@
   .text {
     display: inline;
     font-family: var(--serif);
-    font-size: 15px;
+    font-size: 14.5px;
     line-height: 1.5;
     color: var(--ink);
     cursor: pointer;
     overflow-wrap: anywhere;
-    background-image: linear-gradient(var(--stroke), var(--stroke));
+    background-image: linear-gradient(var(--accent), var(--accent));
     background-repeat: no-repeat;
     background-size: 0% 1.5px;
     background-position: 0 .58em;
@@ -216,10 +300,10 @@
     width: 100%;
     padding: 0;
     border: 0;
-    border-bottom: 1px solid var(--stroke);
+    border-bottom: 1px solid var(--accent);
     background: transparent;
     font-family: var(--serif);
-    font-size: 15px;
+    font-size: 14.5px;
     line-height: 1.5;
     color: var(--ink);
     outline: none;
@@ -230,8 +314,8 @@
   .del {
     margin-top: 2px;
     padding: 0;
-    width: 22px;
-    height: 18px;
+    width: 20px;
+    height: 17px;
     display: grid;
     place-items: center;
     border: 0;
@@ -247,16 +331,16 @@
 
   .add {
     display: grid;
-    grid-template-columns: 18px 18px 1fr 22px;
+    grid-template-columns: 16px 17px 1fr;
     align-items: center;
-    gap: 10px;
-    padding: 11px 2px 2px;
+    gap: 8px;
+    padding: 9px 2px 0;
     border-top: 1px solid var(--rule);
   }
 
   .plus {
     grid-column: 2;
-    font-size: 17px;
+    font-size: 16px;
     line-height: 1;
     text-align: center;
     color: var(--muted);
@@ -268,7 +352,7 @@
     border: 0;
     background: transparent;
     font-family: var(--serif);
-    font-size: 15px;
+    font-size: 14.5px;
     line-height: 1.5;
     color: var(--ink);
     outline: none;
@@ -276,15 +360,7 @@
 
   .add input::placeholder { color: var(--muted); }
 
-  /* ---- Leerer Zustand & Hinweis ---- */
-
-  .empty {
-    margin: 0;
-    padding: 20px 2px;
-    font-family: var(--serif);
-    font-size: 14px;
-    color: var(--muted);
-  }
+  /* ---- Hinweis ---- */
 
   .warn {
     margin-bottom: 10px;
@@ -318,12 +394,35 @@
   @media (prefers-reduced-motion: reduce) {
     * { transition-duration: 1ms !important; }
   }
+
+  /* ---- Schmale Fenster: vier Blöcke untereinander ---- */
+
+  @media (max-width: 700px) {
+    html, body { overflow: auto; }
+
+    .sheet {
+      height: auto;
+      min-height: 100vh;
+      padding: 12px 14px 24px;
+    }
+
+    .matrix {
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
+      gap: 22px;
+    }
+
+    .matrix::before { display: none; }
+
+    .list { overflow: visible; }
+    .hint { font-size: 10px; }
+  }
 </style>
 </head>
 <body>
   <div class="sheet">
     <p id="warn" class="warn" hidden>
-      Dieser Browser speichert nichts innerhalb der Notion-Einbettung.
+      Dieser Browser speichert hier nichts - das passiert in eingebetteten Ansichten.
       <a id="warnLink" href="#" target="_blank" rel="noopener">Liste in eigenem Tab öffnen</a>
     </p>
 
@@ -337,14 +436,7 @@
       </div>
     </div>
 
-    <ul id="list" class="list"></ul>
-
-    <p id="empty" class="empty" hidden>Noch leer. Erste Aufgabe unten eintragen.</p>
-
-    <div class="add">
-      <span class="plus" aria-hidden="true">+</span>
-      <input id="newTask" type="text" placeholder="Aufgabe hinzufügen" autocomplete="off" aria-label="Neue Aufgabe">
-    </div>
+    <div id="matrix" class="matrix"></div>
 
     <p id="live" class="sr" role="status" aria-live="polite"></p>
   </div>
@@ -355,21 +447,32 @@
 
   var STORAGE_KEY = 'notion-todo-v1';
 
-  var list      = document.getElementById('list');
+  /* Die vier Felder. Aus "dringend" und "wichtig" ergibt sich das Feld -
+     deshalb wandert eine Aufgabe von selbst dorthin, wo sie hingehört. */
+  var PANES = [
+    { key: 'q1', urgent: true,  important: true,
+      name: 'Sofort',    hint: 'dringend · wichtig' },
+    { key: 'q2', urgent: false, important: true,
+      name: 'Einplanen', hint: 'wichtig · kann warten' },
+    { key: 'q3', urgent: true,  important: false,
+      name: 'Abgeben',   hint: 'dringend · nicht wichtig' },
+    { key: 'q4', urgent: false, important: false,
+      name: 'Streichen', hint: 'weder noch' }
+  ];
+
+  var matrixEl  = document.getElementById('matrix');
   var countEl   = document.getElementById('count');
   var clearBtn  = document.getElementById('clearDone');
-  var emptyEl   = document.getElementById('empty');
-  var newTask   = document.getElementById('newTask');
   var liveEl    = document.getElementById('live');
+  var warnEl    = document.getElementById('warn');
+  var warnLink  = document.getElementById('warnLink');
   var exportBtn = document.getElementById('exportBtn');
   var importBtn = document.getElementById('importBtn');
   var importFile = document.getElementById('importFile');
-  var warnEl    = document.getElementById('warn');
-  var warnLink  = document.getElementById('warnLink');
 
   var ICON_DOTS  = '<svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor"><circle cx="2.5" cy="4" r="1.2"/><circle cx="7.5" cy="4" r="1.2"/><circle cx="2.5" cy="8" r="1.2"/><circle cx="7.5" cy="8" r="1.2"/><circle cx="2.5" cy="12" r="1.2"/><circle cx="7.5" cy="12" r="1.2"/></svg>';
-  var ICON_CHECK = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.4 4.7 9 10 3.2"/></svg>';
-  var ICON_CROSS = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 2.5 9.5 9.5M9.5 2.5 2.5 9.5"/></svg>';
+  var ICON_CHECK = '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.4 4.7 9 10 3.2"/></svg>';
+  var ICON_CROSS = '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 2.5 9.5 9.5M9.5 2.5 2.5 9.5"/></svg>';
 
   var tasks = read();
   var drag = null;
@@ -390,12 +493,23 @@
     return t && typeof t.id === 'string' && typeof t.text === 'string' && typeof t.done === 'boolean';
   }
 
+  // Ältere Sicherungen kennen die beiden Merkmale noch nicht: ab nach "Einplanen".
+  function normalize(t) {
+    return {
+      id: t.id,
+      text: t.text,
+      done: t.done,
+      urgent: t.urgent === true,
+      important: t.important !== false
+    };
+  }
+
   function read() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return [];
       var parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed.filter(isTask) : [];
+      return Array.isArray(parsed) ? parsed.filter(isTask).map(normalize) : [];
     } catch (err) {
       return [];
     }
@@ -418,7 +532,85 @@
     return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
 
-  /* ---------- Aufbau ---------- */
+  /* ---------- Felder ---------- */
+
+  function paneOf(task) {
+    for (var i = 0; i < PANES.length; i++) {
+      if (PANES[i].urgent === task.urgent && PANES[i].important === task.important) return PANES[i];
+    }
+    return PANES[1];
+  }
+
+  function paneOfElement(li) {
+    var section = li.closest('.pane');
+    for (var i = 0; i < PANES.length; i++) {
+      if (PANES[i].el === section) return PANES[i];
+    }
+    return null;
+  }
+
+  function buildMatrix() {
+    PANES.forEach(function (pane) {
+      var section = document.createElement('section');
+      section.className = 'pane';
+      section.dataset.key = pane.key;
+
+      var head = document.createElement('header');
+
+      var title = document.createElement('h2');
+      title.id = 'head-' + pane.key;
+      title.textContent = pane.name;
+
+      var tally = document.createElement('span');
+      tally.className = 'tally';
+
+      var hint = document.createElement('span');
+      hint.className = 'hint';
+      hint.textContent = pane.hint;
+
+      head.appendChild(title);
+      head.appendChild(tally);
+      head.appendChild(hint);
+
+      var list = document.createElement('ul');
+      list.className = 'list';
+      list.setAttribute('aria-labelledby', title.id);
+
+      var addRow = document.createElement('div');
+      addRow.className = 'add';
+
+      var plus = document.createElement('span');
+      plus.className = 'plus';
+      plus.setAttribute('aria-hidden', 'true');
+      plus.textContent = '+';
+
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.autocomplete = 'off';
+      input.placeholder = 'Aufgabe hinzufügen';
+      input.setAttribute('aria-label', 'Neue Aufgabe unter ' + pane.name);
+      input.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        add(input.value, pane);
+        input.value = '';
+      });
+
+      addRow.appendChild(plus);
+      addRow.appendChild(input);
+
+      section.appendChild(head);
+      section.appendChild(list);
+      section.appendChild(addRow);
+      matrixEl.appendChild(section);
+
+      pane.el = section;
+      pane.listEl = list;
+      pane.tallyEl = tally;
+      pane.inputEl = input;
+    });
+  }
+
+  /* ---------- Aufbau einer Zeile ---------- */
 
   function icon(markup) {
     var span = document.createElement('span');
@@ -437,6 +629,7 @@
     handle.type = 'button';
     handle.className = 'handle';
     handle.setAttribute('aria-label', 'Verschieben: ' + task.text);
+    handle.title = 'Ziehen, oder mit den Pfeiltasten verschieben';
     handle.appendChild(icon(ICON_DOTS));
     handle.addEventListener('pointerdown', beginDrag);
     handle.addEventListener('keydown', moveByKey);
@@ -486,14 +679,33 @@
   }
 
   function render() {
-    list.replaceChildren.apply(list, tasks.map(buildRow));
-    emptyEl.hidden = tasks.length > 0;
+    var rows = {};
+    PANES.forEach(function (pane) { rows[pane.key] = []; });
+
+    tasks.forEach(function (task) {
+      rows[paneOf(task).key].push(buildRow(task));
+    });
+
+    PANES.forEach(function (pane) {
+      pane.listEl.replaceChildren.apply(pane.listEl, rows[pane.key]);
+    });
+
     updateMeta();
   }
 
   function updateMeta() {
-    var open = tasks.filter(function (t) { return !t.done; }).length;
-    var done = tasks.length - open;
+    var open = 0, done = 0;
+    var perPane = {};
+    PANES.forEach(function (pane) { perPane[pane.key] = 0; });
+
+    tasks.forEach(function (task) {
+      if (task.done) done++; else open++;
+      if (!task.done) perPane[paneOf(task).key]++;
+    });
+
+    PANES.forEach(function (pane) {
+      pane.tallyEl.textContent = perPane[pane.key] > 0 ? String(perPane[pane.key]) : '';
+    });
 
     if (tasks.length === 0) countEl.textContent = '';
     else if (done === 0) countEl.textContent = open + ' offen';
@@ -507,18 +719,26 @@
   }
 
   function rowById(id) {
-    return list.querySelector('[data-id="' + id + '"]');
+    return matrixEl.querySelector('[data-id="' + id + '"]');
   }
 
   /* ---------- Aktionen ---------- */
 
-  function add(value) {
+  function add(value, pane) {
     var text = value.trim();
     if (!text) return;
-    tasks.push({ id: newId(), text: text, done: false });
+
+    tasks.push({
+      id: newId(),
+      text: text,
+      done: false,
+      urgent: pane.urgent,
+      important: pane.important
+    });
+
     save();
     render();
-    list.scrollTop = list.scrollHeight;
+    pane.listEl.scrollTop = pane.listEl.scrollHeight;
   }
 
   // Nur die betroffene Zeile ändern, damit der Strich sich zeichnen kann.
@@ -578,20 +798,31 @@
     input.select();
   }
 
-  /* ---------- Reihenfolge ---------- */
+  /* ---------- Reihenfolge und Zuordnung ---------- */
 
-  // Übernimmt die sichtbare Reihenfolge in die Daten.
+  // Übernimmt die sichtbare Anordnung in die Daten: Feld bestimmt die Merkmale.
   function commitOrder() {
-    var position = new Map();
-    Array.prototype.forEach.call(list.children, function (li, index) {
-      position.set(li.dataset.id, index);
+    var byId = {};
+    tasks.forEach(function (task) { byId[task.id] = task; });
+
+    var next = [];
+    PANES.forEach(function (pane) {
+      Array.prototype.forEach.call(pane.listEl.children, function (li) {
+        var task = byId[li.dataset.id];
+        if (!task) return;
+        task.urgent = pane.urgent;
+        task.important = pane.important;
+        next.push(task);
+      });
     });
-    tasks.sort(function (a, b) { return position.get(a.id) - position.get(b.id); });
+
+    tasks = next;
     save();
+    updateMeta();
   }
 
   // Zeile, vor der die gezogene landen soll - null heißt: ans Ende.
-  function dropTarget(pointerY, dragged) {
+  function dropTarget(list, pointerY, dragged) {
     for (var i = 0; i < list.children.length; i++) {
       var row = list.children[i];
       if (row === dragged) continue;
@@ -601,6 +832,23 @@
     return null;
   }
 
+  function paneUnder(x, y) {
+    for (var i = 0; i < PANES.length; i++) {
+      var box = PANES[i].el.getBoundingClientRect();
+      if (x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) return PANES[i];
+    }
+    return null;
+  }
+
+  function highlight(pane) {
+    PANES.forEach(function (p) { p.el.classList.toggle('over', p === pane); });
+  }
+
+  function follow(e) {
+    drag.li.style.transform =
+      'translate(' + (e.clientX - drag.startX) + 'px,' + (e.clientY - drag.startY) + 'px)';
+  }
+
   function beginDrag(e) {
     if (e.button && e.button !== 0) return;
     e.preventDefault();
@@ -608,7 +856,7 @@
     var handle = e.currentTarget;
     handle.setPointerCapture(e.pointerId);
 
-    drag = { handle: handle, li: handle.closest('.item'), startY: e.clientY };
+    drag = { handle: handle, li: handle.closest('.item'), startX: e.clientX, startY: e.clientY };
     drag.li.classList.add('dragging');
 
     handle.addEventListener('pointermove', onDrag);
@@ -619,16 +867,28 @@
   function onDrag(e) {
     if (!drag) return;
 
-    drag.li.style.transform = 'translateY(' + (e.clientY - drag.startY) + 'px)';
+    follow(e);
 
-    var target = dropTarget(e.clientY, drag.li);
-    if (target === drag.li.nextElementSibling) return;
+    var pane = paneUnder(e.clientX, e.clientY) || paneOfElement(drag.li);
+    if (!pane) return;
+    highlight(pane);
+
+    // Lange Listen mitziehen, wenn der Zeiger an den Rand kommt.
+    var listBox = pane.listEl.getBoundingClientRect();
+    if (e.clientY < listBox.top + 24) pane.listEl.scrollTop -= 12;
+    else if (e.clientY > listBox.bottom - 24) pane.listEl.scrollTop += 12;
+
+    var target = dropTarget(pane.listEl, e.clientY, drag.li);
+    if (drag.li.parentNode === pane.listEl && target === drag.li.nextElementSibling) return;
 
     // Nach dem Umhängen springt die Zeile im Layout - Startpunkt gleich mitziehen.
-    var before = drag.li.getBoundingClientRect().top;
-    list.insertBefore(drag.li, target);
-    drag.startY += drag.li.getBoundingClientRect().top - before;
-    drag.li.style.transform = 'translateY(' + (e.clientY - drag.startY) + 'px)';
+    var before = drag.li.getBoundingClientRect();
+    pane.listEl.insertBefore(drag.li, target);
+    var after = drag.li.getBoundingClientRect();
+
+    drag.startX += after.left - before.left;
+    drag.startY += after.top - before.top;
+    follow(e);
   }
 
   function endDrag(e) {
@@ -641,26 +901,61 @@
     drag.handle.removeEventListener('pointercancel', endDrag);
     if (drag.handle.hasPointerCapture(e.pointerId)) drag.handle.releasePointerCapture(e.pointerId);
 
+    highlight(null);
     drag = null;
     commitOrder();
   }
 
+  /* Tastatur: hoch/runter sortiert im Feld und springt an dessen Rand ins
+     Nachbarfeld, links/rechts wechselt die Spalte. */
+  var NEIGHBOUR = {
+    q1: { up: null, down: 'q3', left: null, right: 'q2' },
+    q2: { up: null, down: 'q4', left: 'q1', right: null },
+    q3: { up: 'q1', down: null, left: null, right: 'q4' },
+    q4: { up: 'q2', down: null, left: 'q3', right: null }
+  };
+
+  function paneByKey(key) {
+    for (var i = 0; i < PANES.length; i++) {
+      if (PANES[i].key === key) return PANES[i];
+    }
+    return null;
+  }
+
   function moveByKey(e) {
-    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    var direction = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[e.key];
+    if (!direction) return;
     e.preventDefault();
 
-    var li = e.currentTarget.closest('.item');
-    var rows = Array.prototype.slice.call(list.children);
-    var from = rows.indexOf(li);
-    var to = from + (e.key === 'ArrowUp' ? -1 : 1);
-    if (to < 0 || to >= rows.length) return;
+    var handle = e.currentTarget;
+    var li = handle.closest('.item');
+    var pane = paneOfElement(li);
+    if (!pane) return;
 
-    if (e.key === 'ArrowUp') list.insertBefore(li, rows[to]);
-    else list.insertBefore(li, rows[to].nextElementSibling);
+    var rows = Array.prototype.slice.call(pane.listEl.children);
+    var index = rows.indexOf(li);
+    var vertical = direction === 'up' || direction === 'down';
+    var step = direction === 'up' ? -1 : 1;
+
+    if (vertical && index + step >= 0 && index + step < rows.length) {
+      // Innerhalb des Feldes umsortieren.
+      var mate = rows[index + step];
+      pane.listEl.insertBefore(li, step < 0 ? mate : mate.nextElementSibling);
+      announce('Position ' + (index + step + 1) + ' von ' + rows.length + ' in ' + pane.name);
+    } else {
+      var target = paneByKey(NEIGHBOUR[pane.key][direction]);
+      if (!target) return;
+
+      // Am Rand ins Nachbarfeld: von oben kommend nach ganz oben, sonst ans Ende.
+      if (direction === 'down') target.listEl.insertBefore(li, target.listEl.firstChild);
+      else target.listEl.appendChild(li);
+
+      announce('Verschoben nach ' + target.name);
+    }
 
     commitOrder();
-    e.currentTarget.focus();
-    announce('Position ' + (to + 1) + ' von ' + rows.length);
+    handle.focus();
+    li.scrollIntoView({ block: 'nearest' });
   }
 
   /* ---------- Sichern & Laden ---------- */
@@ -689,7 +984,7 @@
         parsed = null;
       }
 
-      var incoming = Array.isArray(parsed) ? parsed.filter(isTask) : [];
+      var incoming = Array.isArray(parsed) ? parsed.filter(isTask).map(normalize) : [];
       if (incoming.length === 0) {
         alert('In dieser Datei steht keine gesicherte Liste.');
         return;
@@ -712,12 +1007,6 @@
 
   /* ---------- Start ---------- */
 
-  newTask.addEventListener('keydown', function (e) {
-    if (e.key !== 'Enter') return;
-    add(newTask.value);
-    newTask.value = '';
-  });
-
   exportBtn.addEventListener('click', exportTasks);
 
   importBtn.addEventListener('click', function () { importFile.click(); });
@@ -736,11 +1025,12 @@
   });
 
   if (!storageWorks()) showWarning();
+  buildMatrix();
   render();
 
   // Im eigenen App-Fenster gleich tippbereit sein.
   if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
-    newTask.focus();
+    PANES[0].inputEl.focus();
   }
 
   // Macht die App offline lauffähig. Über file:// gibt es das nicht.

@@ -1,7 +1,7 @@
 /* Hält die App offline lauffähig. Aufgaben liegen nicht hier drin,
    sondern im Speicher des Browsers - dieser Cache enthält nur die Hülle. */
 
-var CACHE = 'todo-v1';
+var CACHE = 'todo-v2';
 
 var SHELL = [
   './',
