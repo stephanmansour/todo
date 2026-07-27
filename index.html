@@ -9,45 +9,47 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon-192.png">
 <link rel="apple-touch-icon" href="./icon-192.png">
-<meta name="theme-color" content="#F4F2ED" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#141312" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F6F7F9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1014" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="To-do">
 <style>
-  /* Raster: 4px-Grundeinheit, eine Randspalte (--rail), in der alle Marken
-     bündig rechts stehen. Farbe markiert nur, sie füllt nichts. */
-
   :root {
-    --paper:  #F4F2ED;
-    --ink:    #1A1917;
-    --soft:   #6F6B63;
-    --rule:   #DAD5CB;
-    --tint:   rgba(26,25,23,.045);
-    --lift:   0 10px 30px rgba(26,25,23,.18);
+    --bg:      #F6F7F9;
+    --card:    #FFFFFF;
+    --text:    #16181D;
+    --muted:   #8A8F98;
+    --line:    #E7E9ED;
+    --field:   #F1F3F6;
+    --shadow:  0 1px 2px rgba(16,24,40,.04), 0 2px 8px rgba(16,24,40,.05);
+    --lift:    0 12px 32px rgba(16,24,40,.18);
 
-    --c1: #1F6B4A;
-    --c2: #B32A20;
-    --c3: #9A6B15;
-    --c4: #5C5C5C;
+    --c-quick:    #16A34A;
+    --c-vital:    #E11D48;
+    --c-later:    #D97706;
+    --c-delegate: #64748B;
+    --c-done:     #8A8F98;
 
-    --rail: 48px;
-    --sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
   }
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --paper: #141312;
-      --ink:   #E8E4DC;
-      --soft:  #8F8A81;
-      --rule:  #2E2B27;
-      --tint:  rgba(232,228,220,.055);
-      --lift:  0 10px 34px rgba(0,0,0,.65);
+      --bg:     #0E1014;
+      --card:   #171A20;
+      --text:   #E6E8EC;
+      --muted:  #868C97;
+      --line:   #262A32;
+      --field:  #1E222A;
+      --shadow: 0 0 0 1px rgba(255,255,255,.045);
+      --lift:   0 12px 36px rgba(0,0,0,.62);
 
-      --c1: #5FBF8C;
-      --c2: #E8695C;
-      --c3: #D2A03C;
-      --c4: #9A9A9A;
+      --c-quick:    #3DD68C;
+      --c-vital:    #FB7185;
+      --c-later:    #FBBF24;
+      --c-delegate: #94A3B8;
+      --c-done:     #868C97;
     }
   }
 
@@ -55,292 +57,346 @@
 
   body {
     margin: 0;
-    background: var(--paper);
-    color: var(--ink);
+    background: var(--bg);
+    color: var(--text);
     font-family: var(--sans);
     font-size: 15px;
-    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
 
   body.dragging { user-select: none; cursor: grabbing; }
 
-  .sheet {
+  .app {
     max-width: 640px;
     margin: 0 auto;
-    padding: 0 24px 64px;
+    padding: 0 18px 56px;
   }
 
-  /* ---- Kopf ---- */
+  /* ---- Kopfzeile ---- */
 
-  .masthead {
+  .topbar {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: baseline;
-    gap: 4px 16px;
-    padding: 32px 0 10px;
+    gap: 6px 14px;
+    padding: 22px 2px 14px;
   }
 
-  .wordmark {
-    font-size: 17px;
-    font-weight: 600;
-    letter-spacing: -.01em;
+  .brand {
+    font-size: 19px;
+    font-weight: 680;
+    letter-spacing: -.02em;
   }
 
-  .stat {
-    margin-left: 10px;
-    font-size: 11px;
-    font-weight: 400;
-    letter-spacing: .09em;
-    text-transform: uppercase;
-    color: var(--soft);
+  .tally {
+    margin-left: 8px;
+    font-size: 13px;
+    font-weight: 450;
+    color: var(--muted);
   }
 
-  .tools { display: flex; gap: 18px; }
+  .tools { display: flex; gap: 16px; }
 
   .linkbtn {
     padding: 0;
     border: 0;
     background: none;
-    font-family: inherit;
-    font-size: 11px;
-    letter-spacing: .09em;
-    text-transform: uppercase;
-    color: var(--soft);
+    font: inherit;
+    font-size: 13px;
+    color: var(--muted);
     cursor: pointer;
-    transition: color 120ms;
+    transition: color 140ms;
   }
 
-  .linkbtn:hover, .linkbtn:focus-visible { color: var(--ink); }
+  .linkbtn:hover, .linkbtn:focus-visible { color: var(--text); }
 
   /* ---- Eingabe ---- */
 
   .composer {
     position: sticky;
     top: 0;
-    z-index: 20;
-    padding-bottom: 14px;
-    border-bottom: 1px solid var(--rule);
-    background: var(--paper);
+    z-index: 4;
+    padding: 8px 0 14px;
+    background: var(--bg);
   }
 
-  .field {
-    display: grid;
-    grid-template-columns: var(--rail) 1fr;
-    align-items: baseline;
-    gap: 0 10px;
-    padding: 14px 0 10px;
-  }
-
-  .field .mark {
-    font-size: 15px;
-    text-align: right;
-    color: var(--soft);
+  .composer::after {
+    content: '';
+    display: block;
+    height: 14px;
+    margin: 0 0 -14px;
+    background: linear-gradient(var(--bg), transparent);
   }
 
   #newTask {
-    padding: 0;
-    border: 0;
-    background: none;
-    font-family: inherit;
-    font-size: 17px;
-    line-height: 1.4;
-    color: var(--ink);
+    width: 100%;
+    padding: 15px 17px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--card);
+    box-shadow: var(--shadow);
+    font: inherit;
+    font-size: 15.5px;
+    color: var(--text);
+    caret-color: var(--pick, var(--text));
     outline: none;
+    transition: border-color 150ms, box-shadow 150ms;
   }
 
-  #newTask::placeholder { color: var(--soft); }
+  #newTask::placeholder { color: var(--muted); }
 
-  .choices {
-    display: grid;
-    grid-template-columns: var(--rail) 1fr;
-    align-items: baseline;
-    gap: 0 10px;
+  #newTask:focus {
+    border-color: var(--pick, var(--line));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pick, var(--text)) 14%, transparent);
   }
 
-  .choices .mark {
-    font-size: 10px;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    text-align: right;
-    color: var(--soft);
-  }
-
-  .options {
+  .picker {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px 18px;
+    gap: 7px;
+    margin-top: 9px;
   }
 
-  .opt { cursor: pointer; }
+  .picker[hidden] { display: none; }
 
-  .opt input {
+  .pill { cursor: pointer; }
+
+  .pill input {
     position: absolute;
     width: 1px; height: 1px;
     opacity: 0;
     pointer-events: none;
   }
 
-  .opt span {
-    display: inline-block;
-    padding: 3px 0;
-    border-bottom: 2px solid transparent;
-    font-size: 10.5px;
+  .pill span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--card);
+    font-size: 12.5px;
     font-weight: 500;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--soft);
+    color: var(--muted);
     white-space: nowrap;
-    transition: color 120ms, border-color 120ms;
+    transition: background 150ms, color 150ms, border-color 150ms;
   }
 
-  .opt:hover span { color: var(--ink); }
+  .pill span[data-n] { padding-left: 9px; }
 
-  .opt input:checked + span {
-    border-bottom-color: var(--c);
+  .pill span[data-n]::before {
+    content: attr(data-n);
+    display: grid;
+    place-items: center;
+    width: 17px; height: 17px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--c) 16%, transparent);
+    color: var(--c);
+    font-size: 10.5px;
+    font-weight: 700;
+  }
+
+  .pill:hover span { border-color: color-mix(in srgb, var(--c) 45%, var(--line)); }
+
+  .pill input:checked + span {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--c) 13%, var(--card));
     color: var(--c);
   }
 
-  .opt input:focus-visible + span { outline: 2px solid var(--c); outline-offset: 3px; }
+  .pill input:checked + span[data-n]::before { background: var(--c); color: var(--card); }
 
-  .days { margin-top: 6px; }
-  .days[hidden] { display: none; }
+  .pill input:focus-visible + span { outline: 2px solid var(--c); outline-offset: 2px; }
 
-  /* ---- Abschnitt ---- */
+  .daypicker { margin-top: 7px; }
+  .daypicker .pill span { padding: 5px 11px; font-size: 12px; }
 
-  .section { padding-top: 30px; }
+  /* ---- Abschnitte ---- */
+
+  .section {
+    margin-bottom: 14px;
+    padding: 4px 6px 6px;
+    border-radius: 16px;
+    background: var(--card);
+    box-shadow: var(--shadow);
+    transition: background 160ms;
+  }
+
+  .section[hidden] { display: none; }
+
+  .section.dropping { background: color-mix(in srgb, var(--c) 8%, var(--card)); }
 
   .section > header {
-    display: grid;
-    grid-template-columns: var(--rail) 1fr auto;
-    align-items: baseline;
-    gap: 0 10px;
-    padding-bottom: 7px;
-    border-bottom: 1.5px solid var(--c);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 12px 10px 10px;
   }
 
-  .numeral {
-    font-size: 25px;
-    font-weight: 300;
-    line-height: 1;
-    text-align: right;
-    color: var(--c);
-    font-variant-numeric: lining-nums;
+  .badge {
+    display: grid;
+    place-items: center;
+    width: 21px; height: 21px;
+    border-radius: 7px;
+    background: var(--c);
+    color: var(--card);
+    font-size: 11.5px;
+    font-weight: 700;
   }
+
+  .badge svg { stroke: var(--card); }
 
   .section h2 {
     margin: 0;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .12em;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .1em;
     text-transform: uppercase;
-    color: var(--ink);
+    color: var(--c);
   }
 
   .section h2 .qualifier {
-    font-weight: 400;
+    font-weight: 500;
+    letter-spacing: .02em;
     text-transform: none;
-    letter-spacing: 0;
-    color: var(--soft);
+    color: var(--muted);
   }
 
-  .total {
-    font-size: 11px;
+  .count {
+    margin-left: auto;
+    min-width: 22px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--c) 12%, transparent);
+    font-size: 11.5px;
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
-    color: var(--soft);
+    text-align: center;
+    color: var(--c);
   }
 
-  .total[hidden] { display: none; }
+  .count[hidden] { display: none; }
+
+  .wipe {
+    margin-left: 10px;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 11.5px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 140ms;
+  }
+
+  .wipe:hover { color: var(--c-vital); }
+
+  .empty {
+    margin: 0;
+    padding: 2px 10px 12px;
+    font-size: 13.5px;
+    color: var(--muted);
+  }
+
+  .empty[hidden] { display: none; }
 
   /* ---- Wochentage in Abschnitt 3 ---- */
 
+  .day { border-radius: 10px; transition: background 160ms; }
+
+  .day.dropping { background: color-mix(in srgb, var(--c) 9%, transparent); }
+
+  .day + .day { margin-top: 2px; }
+
   .day > header {
-    display: grid;
-    grid-template-columns: var(--rail) 1fr auto;
-    align-items: center;
-    gap: 0 10px;
-    padding-top: 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 8px 10px 4px;
   }
 
-  .day .label {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    text-align: right;
-    color: var(--soft);
-  }
-
-  .day .hair { border-top: 1px solid var(--rule); }
-
-  .day .count {
+  .day .weekday {
     font-size: 10.5px;
-    font-variant-numeric: tabular-nums;
-    color: var(--soft);
+    font-weight: 700;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+    color: var(--muted);
   }
 
-  .day .count[hidden] { display: none; }
+  .day .rule {
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .day .tick {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+  }
+
+  .day .tick[hidden] { display: none; }
 
   /* ---- Aufgaben ---- */
 
-  .list {
-    min-height: 26px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .dropping .list { background: var(--tint); }
+  .list { margin: 0; padding: 0; list-style: none; min-height: 8px; }
 
   .item {
     display: grid;
-    grid-template-columns: var(--rail) 1fr 22px;
+    grid-template-columns: 20px 20px 1fr 24px;
     align-items: start;
-    gap: 0 10px;
-    padding: 6px 0;
-    border-radius: 2px;
-    transition: background 120ms;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    background: transparent;
+    transition: background 140ms;
   }
 
-  .item:hover { background: var(--tint); }
+  .item.plain { grid-template-columns: 20px 1fr 24px; }
+
+  .item:hover { background: var(--field); }
 
   .item.lifted {
-    background: var(--paper);
+    background: var(--card);
     box-shadow: var(--lift);
   }
 
-  .rail {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 22px;
-  }
-
   .handle {
+    margin-top: 2px;
     padding: 0;
-    width: 14px; height: 18px;
+    width: 20px; height: 20px;
     display: grid;
     place-items: center;
     border: 0;
+    border-radius: 6px;
     background: none;
-    color: var(--soft);
+    color: var(--muted);
     cursor: grab;
     touch-action: none;
-    opacity: 0;
-    transition: opacity 120ms;
+    transition: opacity 140ms;
+  }
+
+  @media (hover: hover) {
+    .handle, .del { opacity: 0; }
+    .item:hover .handle,
+    .item:hover .del,
+    .item:focus-within .handle,
+    .item:focus-within .del { opacity: 1; }
   }
 
   .slot {
+    margin-top: 1px;
     padding: 0;
-    width: 17px; height: 17px;
+    width: 19px; height: 19px;
     display: grid;
     place-items: center;
-    border: 1.5px solid var(--soft);
-    border-radius: 2px;
+    border: 1.6px solid color-mix(in srgb, var(--c) 42%, transparent);
+    border-radius: 7px;
     background: none;
     cursor: pointer;
-    transition: background 140ms, border-color 140ms;
+    transition: background 160ms, border-color 160ms;
   }
 
   .slot:hover { border-color: var(--c); }
@@ -348,145 +404,139 @@
   .item.done .slot { background: var(--c); border-color: var(--c); }
 
   .slot .icon svg {
-    stroke: var(--paper);
+    stroke: var(--card);
     opacity: 0;
-    transition: opacity 140ms;
+    transform: scale(.55);
+    transition: opacity 160ms, transform 160ms;
   }
 
-  .item.done .slot .icon svg { opacity: 1; }
+  .item.done .slot .icon svg { opacity: 1; transform: none; }
 
-  .del {
-    padding: 0;
-    width: 22px; height: 22px;
-    display: grid;
-    place-items: center;
-    border: 0;
-    background: none;
-    color: var(--soft);
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 120ms, color 120ms;
-  }
-
-  .del:hover { color: var(--c2); }
-
-  @media (hover: hover) {
-    .item:hover .handle,
-    .item:hover .del,
-    .item:focus-within .handle,
-    .item:focus-within .del { opacity: 1; }
-  }
-
-  @media (hover: none) {
-    .handle, .del { opacity: .55; }
-  }
-
-  .textcell { min-width: 0; }
+  .textcell { min-width: 0; padding-top: 1px; }
 
   .text {
     display: inline;
-    font-size: 15px;
-    line-height: 1.47;
-    color: var(--ink);
+    font-size: 14.5px;
+    line-height: 1.5;
+    color: var(--text);
     cursor: pointer;
     overflow-wrap: anywhere;
     background-image: linear-gradient(var(--c), var(--c));
     background-repeat: no-repeat;
     background-size: 0% 1.5px;
-    background-position: 0 .64em;
+    background-position: 0 .62em;
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
-    transition: background-size 300ms cubic-bezier(.2,.7,.3,1), color 300ms;
+    transition: background-size 320ms cubic-bezier(.2,.7,.3,1), color 320ms;
   }
 
-  .item.done .text { background-size: 100% 1.5px; color: var(--soft); }
+  .item.done .text { background-size: 100% 1.5px; color: var(--muted); }
 
   .edit {
     width: 100%;
     padding: 0;
     border: 0;
     border-bottom: 1.5px solid var(--c);
-    background: none;
-    font-family: inherit;
-    font-size: 15px;
-    line-height: 1.47;
-    color: var(--ink);
+    background: transparent;
+    font: inherit;
+    font-size: 14.5px;
+    line-height: 1.5;
+    color: var(--text);
     outline: none;
   }
 
+  .del {
+    margin-top: 2px;
+    padding: 0;
+    width: 24px; height: 20px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 140ms, opacity 140ms;
+  }
+
+  .del:hover { color: var(--c-vital); }
+
   /* Platzhalter, der die Lücke hält, während eine Zeile gezogen wird. */
   .ghost {
-    border-radius: 2px;
-    background: var(--tint);
-    box-shadow: inset 0 0 0 1px var(--rule);
+    border-radius: 10px;
+    background: var(--field);
   }
 
   /* ---- Notizen ---- */
 
-  .notes { padding-top: 34px; }
+  .notes {
+    margin-top: 22px;
+    padding: 4px 6px 10px;
+    border-radius: 16px;
+    background: var(--card);
+    box-shadow: var(--shadow);
+  }
 
-  .notes > header {
-    display: grid;
-    grid-template-columns: var(--rail) 1fr auto;
+  .notes header {
+    display: flex;
     align-items: baseline;
-    gap: 0 10px;
-    padding-bottom: 7px;
-    border-bottom: 1px solid var(--rule);
+    gap: 9px;
+    padding: 12px 12px 6px;
   }
 
   .notes h2 {
     margin: 0;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--soft);
-  }
-
-  .keeping {
-    font-size: 10px;
+    font-size: 11.5px;
+    font-weight: 700;
     letter-spacing: .1em;
     text-transform: uppercase;
-    color: var(--soft);
-    opacity: 0;
-    transition: opacity 500ms;
+    color: var(--muted);
   }
 
-  .keeping.show { opacity: 1; }
+  .saved {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--muted);
+    opacity: 0;
+    transition: opacity 400ms;
+  }
+
+  .saved.show { opacity: 1; }
 
   #notes {
     display: block;
     width: 100%;
-    min-height: 88px;
-    margin-top: 12px;
-    padding: 0 0 0 calc(var(--rail) + 10px);
+    min-height: 96px;
+    padding: 4px 12px 8px;
     border: 0;
-    background: none;
-    font-family: inherit;
-    font-size: 15px;
+    background: transparent;
+    font: inherit;
+    font-size: 14.5px;
     line-height: 1.6;
-    color: var(--ink);
+    color: var(--text);
     resize: none;
     outline: none;
     overflow: hidden;
   }
 
-  #notes::placeholder { color: var(--soft); }
+  #notes::placeholder { color: var(--muted); }
 
   /* ---- Hinweis, Fokus, Bewegung ---- */
 
   .warn {
-    margin: 16px 0 0;
-    padding: 10px 0 10px calc(var(--rail) + 10px);
-    border-top: 1px solid var(--rule);
-    border-bottom: 1px solid var(--rule);
+    margin: 14px 0 0;
+    padding: 11px 13px;
+    border-radius: 12px;
+    background: var(--card);
+    box-shadow: var(--shadow);
     font-size: 13px;
-    color: var(--soft);
+    line-height: 1.5;
+    color: var(--muted);
   }
 
-  .warn a { color: var(--ink); }
+  .warn a { color: var(--c-delegate); }
 
-  :focus-visible { outline: 2px solid var(--c, var(--ink)); outline-offset: 2px; }
+  :focus-visible { outline: 2px solid var(--c, var(--text)); outline-offset: 2px; }
 
   .sr {
     position: absolute;
@@ -501,21 +551,20 @@
     * { transition-duration: 1ms !important; }
   }
 
-  @media (max-width: 480px) {
-    :root { --rail: 40px; }
-    .sheet { padding: 0 16px 48px; }
-    .options { gap: 4px 14px; }
+  @media (max-width: 460px) {
+    .app { padding: 0 13px 48px; }
+    .pill span { padding: 6px 10px; font-size: 12px; }
+    .pill span[data-n] { padding-left: 8px; }
   }
 </style>
 </head>
 <body>
-  <div class="sheet">
-    <div class="masthead">
-      <div><span class="wordmark">To-do</span><span id="stat" class="stat"></span></div>
+  <div class="app">
+    <div class="topbar">
+      <div><span class="brand">To-do</span><span id="count" class="tally"></span></div>
       <div class="tools">
         <button type="button" id="exportBtn" class="linkbtn">Sichern</button>
         <button type="button" id="importBtn" class="linkbtn">Laden</button>
-        <button type="button" id="clearDone" class="linkbtn" hidden>Erledigte löschen</button>
         <input type="file" id="importFile" accept="application/json,.json" hidden>
       </div>
     </div>
@@ -526,29 +575,19 @@
     </p>
 
     <div class="composer">
-      <div class="field">
-        <span class="mark" aria-hidden="true">+</span>
-        <input id="newTask" type="text" autocomplete="off" placeholder="Was steht an?" aria-label="Neue Aufgabe">
-      </div>
-      <div class="choices">
-        <span class="mark" aria-hidden="true">In</span>
-        <div id="catOptions" class="options" role="radiogroup" aria-label="Kategorie"></div>
-      </div>
-      <div id="dayRow" class="choices days" hidden>
-        <span class="mark" aria-hidden="true">Am</span>
-        <div id="dayOptions" class="options" role="radiogroup" aria-label="Wochentag"></div>
-      </div>
+      <input id="newTask" type="text" autocomplete="off" placeholder="Was steht an?" aria-label="Neue Aufgabe">
+      <div id="catPicker" class="picker" role="radiogroup" aria-label="Kategorie"></div>
+      <div id="dayPicker" class="picker daypicker" role="radiogroup" aria-label="Wochentag" hidden></div>
     </div>
 
     <main id="sections"></main>
 
     <section class="notes">
       <header>
-        <span aria-hidden="true"></span>
         <h2>Notizen</h2>
-        <span id="keeping" class="keeping">gespeichert</span>
+        <span id="saved" class="saved">gespeichert</span>
       </header>
-      <textarea id="notes" placeholder="Freier Platz für alles, was in keine Aufgabe passt."></textarea>
+      <textarea id="notes" placeholder="Freier Platz. Gedanken, Nummern, alles, was in keine Aufgabe passt."></textarea>
     </section>
 
     <p id="live" class="sr" role="status" aria-live="polite"></p>
@@ -561,12 +600,18 @@
   var TASK_KEY = 'notion-todo-v1';
   var NOTE_KEY = 'notion-todo-notes-v1';
 
+  // So lange darf der Durchstreich-Strich laufen, bevor die Zeile umzieht.
+  var MOVE_DELAY = 340;
+
   var CATS = [
-    { key: 'quick',    n: 1, name: 'Schnell erledigt', qualifier: 'bitte jetzt', pick: 'Jetzt',       color: 'var(--c1)' },
-    { key: 'vital',    n: 2, name: 'Wirklich wichtig', qualifier: '',            pick: 'Wichtig',     color: 'var(--c2)' },
-    { key: 'later',    n: 3, name: 'Kann noch warten', qualifier: '',            pick: 'Später',      color: 'var(--c3)' },
+    { key: 'quick',    n: 1, name: 'Schnell erledigt', qualifier: 'bitte jetzt',
+      pick: 'Jetzt',      color: 'var(--c-quick)' },
+    { key: 'vital',    n: 2, name: 'Wirklich wichtig', qualifier: '',
+      pick: 'Wichtig',    color: 'var(--c-vital)' },
+    { key: 'later',    n: 3, name: 'Kann noch warten', qualifier: '',
+      pick: 'Später',     color: 'var(--c-later)' },
     { key: 'delegate', n: 4, name: 'Delegier das',     qualifier: 'nicht so wichtig',
-      pick: 'Delegieren', color: 'var(--c4)' }
+      pick: 'Delegieren', color: 'var(--c-delegate)' }
   ];
 
   var DAYS = [
@@ -577,16 +622,15 @@
     { key: 'fr', name: 'Freitag',    pick: 'Fr' }
   ];
 
-  // Ablagefächer in Bildschirmreihenfolge: 1, 2, dann Mo bis Fr, dann 4.
+  // Ablagefächer für offene Aufgaben, in Bildschirmreihenfolge.
+  // Erledigtes hat einen eigenen Bereich und ist bewusst kein Ziel.
   var BINS = [];
 
   var sectionsEl = document.getElementById('sections');
-  var catOptions = document.getElementById('catOptions');
-  var dayOptions = document.getElementById('dayOptions');
-  var dayRow     = document.getElementById('dayRow');
+  var catPicker  = document.getElementById('catPicker');
+  var dayPicker  = document.getElementById('dayPicker');
   var newTask    = document.getElementById('newTask');
-  var statEl     = document.getElementById('stat');
-  var clearBtn   = document.getElementById('clearDone');
+  var countEl    = document.getElementById('count');
   var liveEl     = document.getElementById('live');
   var warnEl     = document.getElementById('warn');
   var warnLink   = document.getElementById('warnLink');
@@ -594,17 +638,19 @@
   var importBtn  = document.getElementById('importBtn');
   var importFile = document.getElementById('importFile');
   var notesEl    = document.getElementById('notes');
-  var keepingEl  = document.getElementById('keeping');
+  var savedEl    = document.getElementById('saved');
 
-  var ICON_GRIP  = '<svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="1.6" cy="3" r="1.05"/><circle cx="6.4" cy="3" r="1.05"/><circle cx="1.6" cy="7" r="1.05"/><circle cx="6.4" cy="7" r="1.05"/><circle cx="1.6" cy="11" r="1.05"/><circle cx="6.4" cy="11" r="1.05"/></svg>';
-  var ICON_CHECK = '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.4 4.7 9 10 3.2"/></svg>';
-  var ICON_CROSS = '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 2.5 9.5 9.5M9.5 2.5 2.5 9.5"/></svg>';
+  var ICON_GRIP  = '<svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor"><circle cx="2.5" cy="4" r="1.15"/><circle cx="7.5" cy="4" r="1.15"/><circle cx="2.5" cy="8" r="1.15"/><circle cx="7.5" cy="8" r="1.15"/><circle cx="2.5" cy="12" r="1.15"/><circle cx="7.5" cy="12" r="1.15"/></svg>';
+  var ICON_CHECK = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.4 4.7 9 10 3.2"/></svg>';
+  var ICON_CROSS = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 2.5 9.5 9.5M9.5 2.5 2.5 9.5"/></svg>';
 
   var MOTION_OK = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  var doneSection, doneList, doneCount;
   var tasks = readTasks();
   var drag = null;
   var noteTimer = null;
+  var moveTimer = null;
 
   /* ---------- Daten ---------- */
 
@@ -637,7 +683,8 @@
       text: t.text,
       done: t.done,
       cat: cat,
-      day: cat === 'later' ? (byKey(DAYS, t.day) ? t.day : 'mo') : null
+      day: cat === 'later' ? (byKey(DAYS, t.day) ? t.day : 'mo') : null,
+      doneAt: t.done ? (typeof t.doneAt === 'number' ? t.doneAt : 0) : null
     };
   }
 
@@ -673,8 +720,8 @@
   function saveNotes() {
     try {
       localStorage.setItem(NOTE_KEY, notesEl.value);
-      keepingEl.classList.add('show');
-      setTimeout(function () { keepingEl.classList.remove('show'); }, 1500);
+      savedEl.classList.add('show');
+      setTimeout(function () { savedEl.classList.remove('show'); }, 1500);
     } catch (err) {
       showWarning();
     }
@@ -699,9 +746,10 @@
     return span;
   }
 
-  function option(group, entry, checked, onPick) {
+  function pill(group, entry, checked, color, numbered, onPick) {
     var label = document.createElement('label');
-    label.className = 'opt';
+    label.className = 'pill';
+    label.style.setProperty('--c', color);
 
     var input = document.createElement('input');
     input.type = 'radio';
@@ -710,7 +758,8 @@
     input.checked = checked;
 
     var face = document.createElement('span');
-    face.textContent = entry.pick;
+    if (numbered) face.dataset.n = String(entry.n);
+    face.appendChild(document.createTextNode(entry.pick));
 
     input.addEventListener('change', function () { onPick(entry); });
 
@@ -721,24 +770,53 @@
     return label;
   }
 
-  function buildChoices() {
-    CATS.forEach(function (cat, index) {
-      var label = option('cat', cat, index === 0, pickCat);
-      label.style.setProperty('--c', cat.color);
-      catOptions.appendChild(label);
-    });
-
-    DAYS.forEach(function (day) {
-      var label = option('day', day, day.key === todayKey(), pickDay);
-      label.style.setProperty('--c', 'var(--c3)');
-      dayOptions.appendChild(label);
-    });
-  }
-
   // Am Wochenende ist Montag der nächste sinnvolle Vorschlag.
   function todayKey() {
     var index = new Date().getDay() - 1;
     return index >= 0 && index <= 4 ? DAYS[index].key : 'mo';
+  }
+
+  function buildPickers() {
+    CATS.forEach(function (cat, index) {
+      catPicker.appendChild(pill('cat', cat, index === 0, cat.color, true, pickCat));
+    });
+
+    DAYS.forEach(function (day) {
+      dayPicker.appendChild(pill('day', day, day.key === todayKey(), 'var(--c-later)', false, pickDay));
+    });
+
+    newTask.style.setProperty('--pick', CATS[0].color);
+  }
+
+  function header(cat) {
+    var head = document.createElement('header');
+
+    var badge = document.createElement('span');
+    badge.className = 'badge';
+    badge.setAttribute('aria-hidden', 'true');
+    if (cat) badge.textContent = String(cat.n);
+    else badge.appendChild(icon(ICON_CHECK));
+
+    var title = document.createElement('h2');
+    title.id = 'head-' + (cat ? cat.key : 'done');
+    title.textContent = cat ? cat.name : 'Erledigt';
+
+    if (cat && cat.qualifier) {
+      var qualifier = document.createElement('span');
+      qualifier.className = 'qualifier';
+      qualifier.textContent = ', ' + cat.qualifier;
+      title.appendChild(qualifier);
+    }
+
+    var count = document.createElement('span');
+    count.className = 'count';
+    count.hidden = true;
+
+    head.appendChild(badge);
+    head.appendChild(title);
+    head.appendChild(count);
+
+    return { el: head, titleId: title.id, countEl: count };
   }
 
   function buildSections() {
@@ -747,42 +825,26 @@
       section.className = 'section';
       section.style.setProperty('--c', cat.color);
 
-      var head = document.createElement('header');
-
-      var numeral = document.createElement('span');
-      numeral.className = 'numeral';
-      numeral.setAttribute('aria-hidden', 'true');
-      numeral.textContent = String(cat.n);
-
-      var title = document.createElement('h2');
-      title.id = 'head-' + cat.key;
-      title.textContent = cat.name;
-
-      if (cat.qualifier) {
-        var qualifier = document.createElement('span');
-        qualifier.className = 'qualifier';
-        qualifier.textContent = ', ' + cat.qualifier;
-        title.appendChild(qualifier);
-      }
-
-      var total = document.createElement('span');
-      total.className = 'total';
-      total.hidden = true;
-
-      head.appendChild(numeral);
-      head.appendChild(title);
-      head.appendChild(total);
-      section.appendChild(head);
+      var head = header(cat);
+      section.appendChild(head.el);
 
       if (cat.key === 'later') {
         DAYS.forEach(function (day) { section.appendChild(buildDay(cat, day)); });
       } else {
-        section.appendChild(makeList(cat, null, section, title.id));
+        section.appendChild(makeList(cat, null, section, head.titleId));
+
+        var empty = document.createElement('p');
+        empty.className = 'empty';
+        empty.textContent = 'Noch nichts hier.';
+        section.appendChild(empty);
+        cat.emptyEl = empty;
       }
 
       sectionsEl.appendChild(section);
-      cat.totalEl = total;
+      cat.countEl = head.countEl;
     });
+
+    buildDoneSection();
   }
 
   function buildDay(cat, day) {
@@ -791,25 +853,26 @@
 
     var head = document.createElement('header');
 
-    var label = document.createElement('span');
-    label.className = 'label';
-    label.id = 'day-' + day.key;
-    label.textContent = day.pick;
+    var weekday = document.createElement('span');
+    weekday.className = 'weekday';
+    weekday.id = 'day-' + day.key;
+    weekday.textContent = day.pick;
 
-    var hair = document.createElement('span');
-    hair.className = 'hair';
+    var rule = document.createElement('span');
+    rule.className = 'rule';
 
-    var count = document.createElement('span');
-    count.className = 'count';
-    count.hidden = true;
+    var tick = document.createElement('span');
+    tick.className = 'tick';
+    tick.hidden = true;
 
-    head.appendChild(label);
-    head.appendChild(hair);
-    head.appendChild(count);
+    head.appendChild(weekday);
+    head.appendChild(rule);
+    head.appendChild(tick);
+
     wrap.appendChild(head);
-    wrap.appendChild(makeList(cat, day, wrap, label.id));
+    wrap.appendChild(makeList(cat, day, wrap, weekday.id));
 
-    day.countEl = count;
+    day.tickEl = tick;
     return wrap;
   }
 
@@ -824,6 +887,32 @@
     return list;
   }
 
+  function buildDoneSection() {
+    doneSection = document.createElement('section');
+    doneSection.className = 'section';
+    doneSection.style.setProperty('--c', 'var(--c-done)');
+    doneSection.hidden = true;
+
+    var head = header(null);
+
+    var wipe = document.createElement('button');
+    wipe.type = 'button';
+    wipe.className = 'wipe';
+    wipe.textContent = 'Löschen';
+    wipe.addEventListener('click', clearDone);
+    head.el.appendChild(wipe);
+
+    doneList = document.createElement('ul');
+    doneList.className = 'list';
+    doneList.setAttribute('aria-labelledby', head.titleId);
+
+    doneSection.appendChild(head.el);
+    doneSection.appendChild(doneList);
+    sectionsEl.appendChild(doneSection);
+
+    doneCount = head.countEl;
+  }
+
   function binOfList(list) {
     for (var i = 0; i < BINS.length; i++) {
       if (BINS[i].listEl === list) return BINS[i];
@@ -835,20 +924,21 @@
 
   function buildRow(task) {
     var li = document.createElement('li');
-    li.className = task.done ? 'item done' : 'item';
+    li.className = task.done ? 'item plain done' : 'item';
     li.dataset.id = task.id;
 
-    var rail = document.createElement('div');
-    rail.className = 'rail';
-
-    var handle = document.createElement('button');
-    handle.type = 'button';
-    handle.className = 'handle';
-    handle.setAttribute('aria-label', 'Verschieben: ' + task.text);
-    handle.title = 'Ziehen, oder mit Pfeil hoch/runter verschieben';
-    handle.appendChild(icon(ICON_GRIP));
-    handle.addEventListener('pointerdown', beginDrag);
-    handle.addEventListener('keydown', moveByKey);
+    // Erledigtes wird nicht sortiert, deshalb dort auch kein Griff.
+    if (!task.done) {
+      var handle = document.createElement('button');
+      handle.type = 'button';
+      handle.className = 'handle';
+      handle.setAttribute('aria-label', 'Verschieben: ' + task.text);
+      handle.title = 'Ziehen, oder mit Pfeil hoch/runter verschieben';
+      handle.appendChild(icon(ICON_GRIP));
+      handle.addEventListener('pointerdown', beginDrag);
+      handle.addEventListener('keydown', moveByKey);
+      li.appendChild(handle);
+    }
 
     var slot = document.createElement('button');
     slot.type = 'button';
@@ -858,9 +948,6 @@
     slot.setAttribute('aria-label', task.text);
     slot.appendChild(icon(ICON_CHECK));
     slot.addEventListener('click', function () { toggle(task.id); });
-
-    rail.appendChild(handle);
-    rail.appendChild(slot);
 
     var cell = document.createElement('div');
     cell.className = 'textcell';
@@ -890,7 +977,7 @@
     del.appendChild(icon(ICON_CROSS));
     del.addEventListener('click', function () { remove(task.id); });
 
-    li.appendChild(rail);
+    li.appendChild(slot);
     li.appendChild(cell);
     li.appendChild(del);
     return li;
@@ -908,14 +995,21 @@
 
   function render() {
     var buckets = BINS.map(function () { return []; });
+    var finished = [];
 
     tasks.forEach(function (task) {
-      buckets[BINS.indexOf(binFor(task))].push(buildRow(task));
+      if (task.done) finished.push(task);
+      else buckets[BINS.indexOf(binFor(task))].push(buildRow(task));
     });
+
+    // Zuletzt Abgehaktes steht oben.
+    finished.sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
 
     BINS.forEach(function (bin, index) {
       bin.listEl.replaceChildren.apply(bin.listEl, buckets[index]);
     });
+
+    doneList.replaceChildren.apply(doneList, finished.map(buildRow));
 
     updateMeta();
   }
@@ -935,20 +1029,23 @@
     });
 
     CATS.forEach(function (cat) {
-      cat.totalEl.hidden = perCat[cat.key] === 0;
-      cat.totalEl.textContent = String(perCat[cat.key]);
+      cat.countEl.hidden = perCat[cat.key] === 0;
+      cat.countEl.textContent = String(perCat[cat.key]);
+      if (cat.emptyEl) cat.emptyEl.hidden = perCat[cat.key] > 0;
     });
 
     DAYS.forEach(function (day) {
-      day.countEl.hidden = perDay[day.key] === 0;
-      day.countEl.textContent = String(perDay[day.key]);
+      day.tickEl.hidden = perDay[day.key] === 0;
+      day.tickEl.textContent = String(perDay[day.key]);
     });
 
-    if (tasks.length === 0) statEl.textContent = '';
-    else if (done === 0) statEl.textContent = open + ' offen';
-    else statEl.textContent = open + ' offen · ' + done + ' erledigt';
+    doneSection.hidden = done === 0;
+    doneCount.hidden = done === 0;
+    doneCount.textContent = String(done);
 
-    clearBtn.hidden = done === 0;
+    if (tasks.length === 0) countEl.textContent = '';
+    else if (done === 0) countEl.textContent = open + ' offen';
+    else countEl.textContent = open + ' offen · ' + done + ' erledigt';
   }
 
   function announce(message) { liveEl.textContent = message; }
@@ -963,7 +1060,8 @@
   /* ---------- Aktionen ---------- */
 
   function pickCat(cat) {
-    dayRow.hidden = cat.key !== 'later';
+    dayPicker.hidden = cat.key !== 'later';
+    newTask.style.setProperty('--pick', cat.color);
     announce(cat.name + ' gewählt.');
   }
 
@@ -988,7 +1086,8 @@
       text: text,
       done: false,
       cat: cat.key,
-      day: day ? day.key : null
+      day: day ? day.key : null,
+      doneAt: null
     });
 
     save();
@@ -996,12 +1095,14 @@
     announce('Hinzugefügt: ' + cat.name + (day ? ', ' + day.name : ''));
   }
 
-  // Nur die betroffene Zeile ändern, damit der Strich sich zeichnen kann.
+  /* Erst den Strich zeichnen lassen, dann umziehen. Die Kategorie bleibt
+     gespeichert, damit die Aufgabe beim Enthaken dorthin zurückfindet. */
   function toggle(id) {
     var task = taskById(id);
     if (!task) return;
 
     task.done = !task.done;
+    task.doneAt = task.done ? Date.now() : null;
     save();
 
     var li = sectionsEl.querySelector('[data-id="' + id + '"]');
@@ -1009,7 +1110,28 @@
       li.classList.toggle('done', task.done);
       li.querySelector('.slot').setAttribute('aria-checked', String(task.done));
     }
-    updateMeta();
+
+    announce(task.done ? 'Erledigt: ' + task.text : 'Zurück in die Liste: ' + task.text);
+    scheduleReflow();
+  }
+
+  function scheduleReflow() {
+    clearTimeout(moveTimer);
+    moveTimer = setTimeout(function () {
+      if (drag) { scheduleReflow(); return; }
+
+      // Wer per Tastatur abgehakt hat, soll nach dem Umzug nicht ins Leere fassen.
+      var here = document.activeElement;
+      var row = here && here.closest ? here.closest('.item') : null;
+      var keep = row && here.classList.contains('slot') ? row.dataset.id : null;
+
+      render();
+
+      if (keep) {
+        var again = sectionsEl.querySelector('[data-id="' + keep + '"] .slot');
+        if (again) again.focus();
+      }
+    }, MOVE_DELAY);
   }
 
   function remove(id) {
@@ -1017,6 +1139,13 @@
     save();
     render();
     announce('Aufgabe gelöscht.');
+  }
+
+  function clearDone() {
+    tasks = tasks.filter(function (t) { return !t.done; });
+    save();
+    render();
+    announce('Erledigte Aufgaben entfernt.');
   }
 
   function startEdit(li, task) {
@@ -1063,7 +1192,13 @@
         task.cat = bin.cat.key;
         task.day = bin.day ? bin.day.key : null;
         next.push(task);
+        delete index[task.id];
       });
+    });
+
+    // Erledigtes steht nicht in den Fächern und behält seinen Platz.
+    tasks.forEach(function (task) {
+      if (index[task.id]) next.push(task);
     });
 
     tasks = next;
@@ -1342,7 +1477,7 @@
   /* ---------- Sichern & Laden ---------- */
 
   function exportAll() {
-    var payload = { version: 3, tasks: tasks, notes: notesEl.value };
+    var payload = { version: 4, tasks: tasks, notes: notesEl.value };
     var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var link = document.createElement('a');
@@ -1434,17 +1569,10 @@
     importFile.value = '';
   });
 
-  clearBtn.addEventListener('click', function () {
-    tasks = tasks.filter(function (t) { return !t.done; });
-    save();
-    render();
-    announce('Erledigte Aufgaben entfernt.');
-  });
-
   window.addEventListener('resize', growNotes);
 
   if (!storageWorks()) showWarning();
-  buildChoices();
+  buildPickers();
   buildSections();
   render();
   loadNotes();
