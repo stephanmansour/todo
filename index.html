@@ -269,8 +269,31 @@
 
   .pill input:focus-visible + span { outline: 2px solid var(--c); outline-offset: 2px; }
 
-  .daypicker { margin-top: 0.4375rem; }
+  .daypicker { margin-top: 0.4375rem; align-items: center; }
   .daypicker .pill span { padding: 0.3125rem 0.6875rem; font-size: 0.75rem; }
+
+  .datefield {
+    padding: 0.25rem 0.625rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--card);
+    font: inherit;
+    font-size: 0.75rem;
+    color: var(--muted);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 150ms, color 150ms, background 150ms;
+  }
+
+  .datefield:hover { border-color: color-mix(in srgb, var(--c-later) 45%, var(--line)); }
+
+  .datefield.set {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--c-later) 13%, var(--card));
+    color: var(--c-later);
+  }
+
+  .datefield:focus-visible { outline: 2px solid var(--c-later); outline-offset: 2px; }
 
   /* ---- Spalten ---- */
 
@@ -411,12 +434,15 @@
   }
 
   .day .weekday {
-    font-size: 0.6562rem;
-    font-weight: 700;
-    letter-spacing: .11em;
-    text-transform: uppercase;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: .015em;
     color: var(--muted);
+    white-space: nowrap;
   }
+
+  .day.today .weekday,
+  .day.overdue .weekday { font-weight: 700; }
 
   .day .rule {
     flex: 1;
@@ -602,9 +628,17 @@
   .toast button.strong { font-weight: 600; color: var(--text); }
   .toast button:hover { color: var(--c-quick); }
 
-  /* ---- Heute ---- */
+  /* ---- Heute und Überfälliges ---- */
 
   .day.today .weekday { color: var(--c-later); }
+  .day.overdue .weekday { color: var(--c-vital); }
+
+  /* Trennt die zurückliegenden Tage sichtbar von heute. */
+  .day.opens-today {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--line);
+  }
 
   .today-tag {
     padding: 0.0625rem 0.375rem;
@@ -617,12 +651,42 @@
     color: var(--c-later);
   }
 
-  /* ---- Älteres Erledigtes ---- */
+  .today-tag.late {
+    background: color-mix(in srgb, var(--c-vital) 15%, transparent);
+    color: var(--c-vital);
+  }
+
+  /* ---- Auf- und Zuklappen ---- */
+
+  .chevron {
+    display: grid;
+    place-items: center;
+    width: 1.375rem; height: 1.375rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0.375rem;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 140ms;
+  }
+
+  .chevron:hover { color: var(--text); }
+
+  .chevron svg {
+    width: 0.6875rem; height: 0.6875rem;
+    transition: transform 200ms cubic-bezier(.2,.7,.3,1);
+  }
+
+  .chevron[aria-expanded="true"] svg { transform: rotate(90deg); }
+
+  /* ---- Weitere Tage ---- */
 
   .more {
     display: block;
     width: 100%;
-    padding: 0.375rem 0.625rem 0.625rem;
+    margin-top: 0.25rem;
+    padding: 0.5rem 0.625rem;
     border: 0;
     background: none;
     font: inherit;
@@ -634,7 +698,6 @@
   }
 
   .more:hover { color: var(--text); }
-  .more[hidden] { display: none; }
 
   /* ---- Geräte-Sync ---- */
 
@@ -836,7 +899,10 @@
     <div class="composer">
       <input id="newTask" type="text" autocomplete="off" placeholder="Was steht an?" aria-label="Neue Aufgabe">
       <div id="catPicker" class="picker" role="radiogroup" aria-label="Kategorie"></div>
-      <div id="dayPicker" class="picker daypicker" role="radiogroup" aria-label="Wochentag" hidden></div>
+      <div id="dayPicker" class="picker daypicker" hidden>
+        <span id="dayPills" role="radiogroup" aria-label="Tag" style="display:contents"></span>
+        <input type="date" id="dayDate" class="datefield" aria-label="Anderes Datum">
+      </div>
     </div>
 
     <main id="sections"></main>
@@ -895,12 +961,16 @@
   var NOTE_KEY  = 'notion-todo-notes-v1';
   var SCALE_KEY = 'notion-todo-scale-v1';
   var VIEW_KEY  = 'notion-todo-view-v1';
-  var WEEK_KEY  = 'notion-todo-week-v1';
+
   var SYNC_KEY  = 'notion-todo-sync-v1';
   var STAMP_KEY = 'notion-todo-stamp-v1';
 
-  // So viele erledigte Aufgaben stehen offen da, der Rest klappt auf Wunsch aus.
-  var DONE_VISIBLE = 15;
+  // So viele Tage zeigt Abschnitt 3 anfangs, jeder Klick legt eine Woche drauf.
+  var DAYS_SHOWN = 7;
+  var DAYS_STEP  = 7;
+
+  // Schnellwahl im Eingabefeld: heute plus die nächsten sechs Tage.
+  var QUICK_DAYS = 7;
 
   // So lange darf der Durchstreich-Strich laufen, bevor die Zeile umzieht.
   var MOVE_DELAY = 340;
@@ -916,13 +986,12 @@
       pick: 'Delegieren', color: 'var(--c-delegate)', column: 2 }
   ];
 
-  var DAYS = [
-    { key: 'mo', name: 'Montag',     pick: 'Mo' },
-    { key: 'di', name: 'Dienstag',   pick: 'Di' },
-    { key: 'mi', name: 'Mittwoch',   pick: 'Mi' },
-    { key: 'do', name: 'Donnerstag', pick: 'Do' },
-    { key: 'fr', name: 'Freitag',    pick: 'Fr' }
-  ];
+  var WEEKDAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+  var MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+                'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+
+  // Frühere Fassungen kannten nur Wochentage - diese Zuordnung übersetzt sie.
+  var OLD_DAYS = { mo: 1, di: 2, mi: 3, do: 4, fr: 5 };
 
   // Ablagefächer für offene Aufgaben, in Bildschirmreihenfolge.
   // Erledigtes hat einen eigenen Bereich und ist bewusst kein Ziel.
@@ -931,6 +1000,8 @@
   var sectionsEl = document.getElementById('sections');
   var catPicker  = document.getElementById('catPicker');
   var dayPicker  = document.getElementById('dayPicker');
+  var dayPills   = document.getElementById('dayPills');
+  var dayDate    = document.getElementById('dayDate');
   var newTask    = document.getElementById('newTask');
   var countEl    = document.getElementById('count');
   var liveEl     = document.getElementById('live');
@@ -960,18 +1031,23 @@
   var ICON_GRIP  = '<svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor"><circle cx="2.5" cy="4" r="1.15"/><circle cx="7.5" cy="4" r="1.15"/><circle cx="2.5" cy="8" r="1.15"/><circle cx="7.5" cy="8" r="1.15"/><circle cx="2.5" cy="12" r="1.15"/><circle cx="7.5" cy="12" r="1.15"/></svg>';
   var ICON_CHECK = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.4 4.7 9 10 3.2"/></svg>';
   var ICON_CROSS = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 2.5 9.5 9.5M9.5 2.5 2.5 9.5"/></svg>';
+  var ICON_CHEVRON = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2l4 4-4 4"/></svg>';
 
   var MOTION_OK = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   var COLUMNS = [];
-  var doneSection, doneList, doneCount, doneMore;
+  var doneSection, doneList, doneCount, doneToggle;
+  var laterBody, laterMore;
   var tasks = readTasks();
   var drag = null;
   var noteTimer = null;
   var moveTimer = null;
   var scaleTimer = null;
   var toastTimer = null;
-  var showAllDone = false;
+  var showDone = false;
+  var horizon = DAYS_SHOWN;
+  var chosenDate = '';
+  var quickPills = [];
   var sync = { url: '', id: '', busy: false, pushTimer: null, lastPull: 0 };
   var applyingRemote = false;
 
@@ -1006,9 +1082,17 @@
       text: t.text,
       done: t.done,
       cat: cat,
-      day: cat === 'later' ? (byKey(DAYS, t.day) ? t.day : 'mo') : null,
+      date: cat === 'later' ? dateFor(t) : null,
       doneAt: t.done ? (typeof t.doneAt === 'number' ? t.doneAt : 0) : null
     };
+  }
+
+  /* Übersetzt den alten Wochentag in ein echtes Datum: der nächste Termin
+     dieses Wochentags, heute eingeschlossen. */
+  function dateFor(t) {
+    if (isDate(t.date)) return t.date;
+    if (t.day && OLD_DAYS[t.day]) return nextWeekday(OLD_DAYS[t.day]);
+    return today();
   }
 
   function readTasks() {
@@ -1095,23 +1179,60 @@
     return label;
   }
 
-  // Position des heutigen Werktags, am Wochenende -1.
-  function todayIndex() {
-    var index = new Date().getDay() - 1;
-    return index >= 0 && index <= 4 ? index : -1;
+  /* ---------- Datum ----------
+     Tage werden als 2026-08-01 geführt. In dieser Schreibweise ordnet ein
+     schlichter Textvergleich die Tage schon richtig. Gerechnet wird bewusst
+     mit der Ortszeit, sonst rutscht der Tag über Mitternacht weg. */
+
+  function isoOf(date) {
+    return date.getFullYear() + '-' +
+      ('0' + (date.getMonth() + 1)).slice(-2) + '-' +
+      ('0' + date.getDate()).slice(-2);
   }
 
-  // Am Wochenende ist Montag der nächste sinnvolle Vorschlag.
-  function todayKey() {
-    var index = todayIndex();
-    return index === -1 ? 'mo' : DAYS[index].key;
+  function today() { return isoOf(new Date()); }
+
+  function dateOf(iso) {
+    var parts = iso.split('-');
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
   }
 
-  function dayIndex(key) {
-    for (var i = 0; i < DAYS.length; i++) {
-      if (DAYS[i].key === key) return i;
-    }
-    return 0;
+  function shift(iso, days) {
+    var date = dateOf(iso);
+    date.setDate(date.getDate() + days);
+    return isoOf(date);
+  }
+
+  function isDate(value) {
+    return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+  }
+
+  // "Samstag, 1. August" - das Jahr nur, wenn es nicht das laufende ist.
+  function longDate(iso) {
+    var date = dateOf(iso);
+    var label = WEEKDAYS[date.getDay()] + ', ' + date.getDate() + '. ' + MONTHS[date.getMonth()];
+    return date.getFullYear() === new Date().getFullYear() ? label : label + ' ' + date.getFullYear();
+  }
+
+  // "Mo 3." für die Schnellwahl
+  function shortDate(iso) {
+    var date = dateOf(iso);
+    return WEEKDAYS[date.getDay()].slice(0, 2) + ' ' + date.getDate() + '.';
+  }
+
+  function relation(iso) {
+    var now = today();
+    if (iso === now) return 'heute';
+    if (iso === shift(now, 1)) return 'morgen';
+    if (iso < now) return 'überfällig';
+    return '';
+  }
+
+  // Der nächste Termin für einen Wochentag, heute eingeschlossen.
+  function nextWeekday(weekday) {
+    var now = new Date();
+    var ahead = (weekday - now.getDay() + 7) % 7;
+    return shift(isoOf(now), ahead);
   }
 
   function buildPickers() {
@@ -1119,11 +1240,56 @@
       catPicker.appendChild(pill('cat', cat, index === 0, cat.color, true, pickCat));
     });
 
-    DAYS.forEach(function (day) {
-      dayPicker.appendChild(pill('day', day, day.key === todayKey(), 'var(--c-later)', false, pickDay));
+    buildQuickDays();
+    newTask.style.setProperty('--pick', CATS[0].color);
+  }
+
+  /* Heute, morgen und die Tage danach als Knöpfe; alles Weitere über das
+     Datumsfeld daneben. Die Knöpfe werden beim Tageswechsel neu aufgebaut. */
+  function buildQuickDays() {
+    var start = today();
+    quickPills = [];
+
+    var labels = [];
+    for (var i = 0; i < QUICK_DAYS; i++) {
+      var iso = shift(start, i);
+      labels.push({
+        key: iso,
+        pick: i === 0 ? 'Heute' : (i === 1 ? 'Morgen' : shortDate(iso))
+      });
+    }
+
+    if (!chosenDate || chosenDate < start) chosenDate = start;
+
+    dayPills.replaceChildren.apply(dayPills, labels.map(function (entry) {
+      var label = pill('day', entry, entry.key === chosenDate, 'var(--c-later)', false, function (picked) {
+        setDate(picked.key);
+      });
+      quickPills.push(entry);
+      return label;
+    }));
+
+    dayDate.min = start;
+    markDate();
+  }
+
+  function setDate(iso) {
+    chosenDate = iso;
+    markDate();
+    announce(longDate(iso) + ' gewählt.');
+  }
+
+  // Zeigt an, welcher Tag gewählt ist - als Knopf oder im Datumsfeld.
+  function markDate() {
+    var hit = false;
+
+    quickPills.forEach(function (entry) {
+      entry.inputEl.checked = entry.key === chosenDate;
+      if (entry.inputEl.checked) hit = true;
     });
 
-    newTask.style.setProperty('--pick', CATS[0].color);
+    dayDate.value = chosenDate;
+    dayDate.classList.toggle('set', !hit);
   }
 
   function header(cat) {
@@ -1134,6 +1300,7 @@
     badge.setAttribute('aria-hidden', 'true');
     if (cat) badge.textContent = String(cat.n);
     else badge.appendChild(icon(ICON_CHECK));
+    if (!cat) badge.style.display = 'none';
 
     var title = document.createElement('h2');
     title.id = 'head-' + (cat ? cat.key : 'done');
@@ -1178,7 +1345,19 @@
       section.appendChild(head.el);
 
       if (cat.key === 'later') {
-        DAYS.forEach(function (day) { section.appendChild(buildDay(cat, day)); });
+        laterBody = document.createElement('div');
+        section.appendChild(laterBody);
+
+        laterMore = document.createElement('button');
+        laterMore.type = 'button';
+        laterMore.className = 'more';
+        laterMore.addEventListener('click', function () {
+          horizon += DAYS_STEP;
+          render();
+        });
+        section.appendChild(laterMore);
+
+        cat.later = true;
       } else {
         section.appendChild(makeList(cat, null, section, head.titleId));
 
@@ -1197,7 +1376,7 @@
     COLUMNS[2].appendChild(notesSection);
   }
 
-  function buildDay(cat, day) {
+  function buildDay(cat, iso, count) {
     var wrap = document.createElement('div');
     wrap.className = 'day';
 
@@ -1205,44 +1384,45 @@
 
     var weekday = document.createElement('span');
     weekday.className = 'weekday';
-    weekday.id = 'day-' + day.key;
-    weekday.textContent = day.pick;
-
-    var rule = document.createElement('span');
-    rule.className = 'rule';
-
-    var tick = document.createElement('span');
-    tick.className = 'tick';
-    tick.hidden = true;
+    weekday.id = 'day-' + iso;
+    weekday.textContent = longDate(iso);
 
     head.appendChild(weekday);
 
-    if (dayIndex(day.key) === todayIndex()) {
+    var mark = relation(iso);
+    if (mark === 'heute' || mark === 'überfällig') {
       var tag = document.createElement('span');
-      tag.className = 'today-tag';
-      tag.textContent = 'heute';
+      tag.className = mark === 'heute' ? 'today-tag' : 'today-tag late';
+      tag.textContent = mark;
       head.appendChild(tag);
-      wrap.classList.add('today');
+      wrap.classList.add(mark === 'heute' ? 'today' : 'overdue');
     }
 
+    var rule = document.createElement('span');
+    rule.className = 'rule';
     head.appendChild(rule);
-    head.appendChild(tick);
+
+    if (count > 0) {
+      var tick = document.createElement('span');
+      tick.className = 'tick';
+      tick.textContent = String(count);
+      head.appendChild(tick);
+    }
 
     wrap.appendChild(head);
-    wrap.appendChild(makeList(cat, day, wrap, weekday.id));
+    wrap.appendChild(makeList(cat, iso, wrap, weekday.id));
 
-    day.tickEl = tick;
     return wrap;
   }
 
   /* Der Ablagebereich ist das ganze Element - so bleibt zwischen Überschrift
      und erster Zeile keine tote Zone, in der das Ziehen ins Leere greift. */
-  function makeList(cat, day, zoneEl, labelledBy) {
+  function makeList(cat, date, zoneEl, labelledBy) {
     var list = document.createElement('ul');
     list.className = 'list';
     list.setAttribute('aria-labelledby', labelledBy);
 
-    BINS.push({ cat: cat, day: day, zoneEl: zoneEl, listEl: list });
+    BINS.push({ cat: cat, date: date || null, zoneEl: zoneEl, listEl: list });
     return list;
   }
 
@@ -1265,18 +1445,22 @@
     doneList.className = 'list';
     doneList.setAttribute('aria-labelledby', head.titleId);
 
-    doneMore = document.createElement('button');
-    doneMore.type = 'button';
-    doneMore.className = 'more';
-    doneMore.hidden = true;
-    doneMore.addEventListener('click', function () {
-      showAllDone = !showAllDone;
+    doneToggle = document.createElement('button');
+    doneToggle.type = 'button';
+    doneToggle.className = 'chevron';
+    doneToggle.setAttribute('aria-expanded', 'false');
+    doneToggle.setAttribute('aria-label', 'Erledigte anzeigen');
+    doneToggle.appendChild(icon(ICON_CHEVRON));
+    doneToggle.addEventListener('click', function () {
+      showDone = !showDone;
+      doneToggle.setAttribute('aria-expanded', String(showDone));
+      doneToggle.setAttribute('aria-label', showDone ? 'Erledigte ausblenden' : 'Erledigte anzeigen');
       render();
     });
 
+    head.el.insertBefore(doneToggle, head.el.firstChild);
     doneSection.appendChild(head.el);
     doneSection.appendChild(doneList);
-    doneSection.appendChild(doneMore);
     COLUMNS[2].appendChild(doneSection);
 
     doneCount = head.countEl;
@@ -1356,13 +1540,68 @@
     for (var i = 0; i < BINS.length; i++) {
       var bin = BINS[i];
       if (bin.cat.key !== task.cat) continue;
-      if (bin.day && bin.day.key !== task.day) continue;
+      if (bin.date && bin.date !== task.date) continue;
       return bin;
     }
     return BINS[0];
   }
 
+  /* Welche Tage Abschnitt 3 zeigt: die nächsten Tage ab heute, dazu jeder
+     Tag, an dem etwas liegt - auch zurückliegende. So verschwindet nichts,
+     und leere Wochen blähen die Liste trotzdem nicht auf. */
+  function visibleDates() {
+    var start = today();
+    var seen = {};
+
+    for (var i = 0; i < horizon; i++) seen[shift(start, i)] = true;
+
+    tasks.forEach(function (task) {
+      if (!task.done && task.cat === 'later' && task.date) seen[task.date] = true;
+    });
+
+    return Object.keys(seen).sort();
+  }
+
+  function rebuildDays() {
+    var start = today();
+    var dates = visibleDates();
+    var perDate = {};
+
+    tasks.forEach(function (task) {
+      if (task.done || task.cat !== 'later' || !task.date) return;
+      perDate[task.date] = (perDate[task.date] || 0) + 1;
+    });
+
+    // Fächer von Abschnitt 3 verwerfen, die übrigen bleiben bestehen.
+    for (var i = BINS.length - 1; i >= 0; i--) {
+      if (BINS[i].cat.later) BINS.splice(i, 1);
+    }
+
+    var blocks = dates.map(function (iso, index) {
+      var block = buildDay(CATS[2], iso, perDate[iso] || 0);
+      if (iso >= start && (index === 0 || dates[index - 1] < start)) {
+        block.classList.add('opens-today');
+      }
+      return block;
+    });
+
+    laterBody.replaceChildren.apply(laterBody, blocks);
+
+    // Reihenfolge der Fächer wieder herstellen: 1, 2, Tage, 4.
+    BINS.sort(function (a, b) {
+      var order = { quick: 0, vital: 1, later: 2, delegate: 3 };
+      if (a.cat.key !== b.cat.key) return order[a.cat.key] - order[b.cat.key];
+      if (a.date && b.date) return a.date < b.date ? -1 : 1;
+      return 0;
+    });
+
+    var last = dates[dates.length - 1];
+    laterMore.textContent = 'Bis ' + longDate(last) + ' · weitere ' + DAYS_STEP + ' Tage';
+  }
+
   function render() {
+    rebuildDays();
+
     var buckets = BINS.map(function () { return []; });
     var finished = [];
 
@@ -1374,44 +1613,32 @@
     // Zuletzt Abgehaktes steht oben.
     finished.sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
 
-    var shown = showAllDone ? finished : finished.slice(0, DONE_VISIBLE);
-    var hidden = finished.length - shown.length;
-
     BINS.forEach(function (bin, index) {
       bin.listEl.replaceChildren.apply(bin.listEl, buckets[index]);
     });
 
-    doneList.replaceChildren.apply(doneList, shown.map(buildRow));
-
-    doneMore.hidden = finished.length <= DONE_VISIBLE;
-    doneMore.textContent = showAllDone ? 'Weniger anzeigen' : hidden + ' ältere anzeigen';
+    doneList.hidden = !showDone;
+    doneList.replaceChildren.apply(doneList, showDone ? finished.map(buildRow) : []);
 
     updateMeta();
   }
 
   function updateMeta() {
     var open = 0, done = 0;
-    var perCat = {}, perDay = {};
+    var perCat = {};
 
     CATS.forEach(function (cat) { perCat[cat.key] = 0; });
-    DAYS.forEach(function (day) { perDay[day.key] = 0; });
 
     tasks.forEach(function (task) {
       if (task.done) { done++; return; }
       open++;
       perCat[task.cat]++;
-      if (task.day) perDay[task.day]++;
     });
 
     CATS.forEach(function (cat) {
       cat.countEl.hidden = perCat[cat.key] === 0;
       cat.countEl.textContent = String(perCat[cat.key]);
       if (cat.emptyEl) cat.emptyEl.hidden = perCat[cat.key] > 0;
-    });
-
-    DAYS.forEach(function (day) {
-      day.tickEl.hidden = perDay[day.key] === 0;
-      day.tickEl.textContent = String(perDay[day.key]);
     });
 
     doneSection.hidden = done === 0;
@@ -1488,12 +1715,10 @@
   /* ---------- Aktionen ---------- */
 
   function pickCat(cat) {
-    dayPicker.hidden = cat.key !== 'later';
+    dayPicker.hidden = !cat.later;
     newTask.style.setProperty('--pick', cat.color);
     announce(cat.name + ' gewählt.');
   }
-
-  function pickDay(day) { announce(day.name + ' gewählt.'); }
 
   function selected(list) {
     for (var i = 0; i < list.length; i++) {
@@ -1504,18 +1729,18 @@
 
   function stage(text) {
     var cat = selected(CATS);
-    var day = cat.key === 'later' ? selected(DAYS) : null;
+    var date = cat.later ? chosenDate : null;
 
     tasks.push({
       id: newId(),
       text: text,
       done: false,
       cat: cat.key,
-      day: day ? day.key : null,
+      date: date,
       doneAt: null
     });
 
-    return { cat: cat, day: day };
+    return { cat: cat, date: date };
   }
 
   function add(value) {
@@ -1525,7 +1750,7 @@
     var where = stage(text);
     save();
     render();
-    announce('Hinzugefügt: ' + where.cat.name + (where.day ? ', ' + where.day.name : ''));
+    announce('Hinzugefügt: ' + where.cat.name + (where.date ? ', ' + longDate(where.date) : ''));
   }
 
   /* Mehrzeiliges Eingefügtes wird zu je einer Aufgabe pro Zeile.
@@ -1654,7 +1879,7 @@
         var task = index[node.dataset.id];
         if (!task) return;
         task.cat = bin.cat.key;
-        task.day = bin.day ? bin.day.key : null;
+        task.date = bin.date;
         next.push(task);
         delete index[task.id];
       });
@@ -1887,7 +2112,7 @@
     commitOrder();
 
     if (landedIn) {
-      announce(landedIn.cat.name + (landedIn.day ? ', ' + landedIn.day.name : ''));
+      announce(landedIn.cat.name + (landedIn.date ? ', ' + longDate(landedIn.date) : ''));
     }
   }
 
@@ -1919,7 +2144,7 @@
       if (step > 0) neighbour.listEl.insertBefore(li, neighbour.listEl.firstChild);
       else neighbour.listEl.appendChild(li);
 
-      announce(neighbour.cat.name + (neighbour.day ? ', ' + neighbour.day.name : ''));
+      announce(neighbour.cat.name + (neighbour.date ? ', ' + longDate(neighbour.date) : ''));
     }
 
     commitOrder();
@@ -1951,52 +2176,27 @@
     applyScale(isNaN(stored) ? 1 : stored);
   }
 
-  /* ---------- Wochenlauf ----------
-     Aufgaben in Abschnitt 3 hängen an einem Wochentag, nicht an einem Datum.
-     Beim Öffnen wird deshalb geprüft, was aus vergangenen Tagen liegen blieb -
-     verschoben wird nur auf ausdrückliche Zustimmung. */
+  /* ---------- Überfälliges ----------
+     Aufgaben in Abschnitt 3 hängen an einem Datum. Was vor heute liegt und
+     noch offen ist, wird beim Öffnen angeboten - verschoben wird aber nur
+     auf ausdrückliche Zustimmung. */
 
-  function weekStamp() {
-    var now = new Date();
-    var date = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-    var weekday = date.getUTCDay() || 7;
-
-    date.setUTCDate(date.getUTCDate() + 4 - weekday);
-    var yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-    var week = Math.ceil(((date - yearStart) / 86400000 + 1) / 7);
-
-    return date.getUTCFullYear() + '-W' + week;
+  function overdue() {
+    var now = today();
+    return tasks.filter(function (task) {
+      return !task.done && task.cat === 'later' && task.date && task.date < now;
+    });
   }
 
-  function checkWeek() {
-    var stamp = weekStamp();
-    var previous = null;
-
-    try {
-      previous = localStorage.getItem(WEEK_KEY);
-      localStorage.setItem(WEEK_KEY, stamp);
-    } catch (err) {
-      return;
-    }
-
-    var freshWeek = previous !== null && previous !== stamp;
-    var today = todayIndex();
-    var target = DAYS[today === -1 ? 0 : today];
-
-    var stale = tasks.filter(function (task) {
-      if (task.done || task.cat !== 'later' || task.day === target.key) return false;
-      if (freshWeek || today === -1) return true;
-      return dayIndex(task.day) < today;
-    });
-
+  function checkOverdue() {
+    var stale = overdue();
     if (stale.length === 0) return;
 
-    var lead = freshWeek ? 'Neue Woche. ' : '';
-    var body = stale.length === 1 ? 'Eine Aufgabe liegt noch offen.'
-                                  : stale.length + ' Aufgaben liegen noch offen.';
+    var body = stale.length === 1 ? 'Eine Aufgabe ist liegen geblieben.'
+                                  : stale.length + ' Aufgaben sind liegen geblieben.';
 
-    toast(lead + body, [
-      { label: 'Auf ' + target.name, strong: true, run: function () { moveStale(stale, target); } },
+    toast(body, [
+      { label: 'Auf heute', strong: true, run: function () { moveStale(stale, today()); } },
       { label: 'Lassen' }
     ], true);
   }
@@ -2008,7 +2208,7 @@
     list.forEach(function (stale) {
       var task = taskById(stale.id);
       if (!task || task.done || task.cat !== 'later') return;
-      task.day = target.key;
+      task.date = target;
       moved++;
     });
 
@@ -2017,8 +2217,8 @@
     save();
     render();
 
-    announce(moved + ' Aufgaben auf ' + target.name + ' geschoben.');
-    undoable('Auf ' + target.name + ' geschoben: ' + moved, before);
+    announce(moved + ' Aufgaben auf ' + longDate(target) + ' geschoben.');
+    undoable('Auf heute geschoben: ' + moved, before);
   }
 
   /* ---------- Ansicht ---------- */
@@ -2165,7 +2365,7 @@
       saveNotes();
     }
 
-    writeStamp(data.updatedAt || Date.now());
+    writeStamp(data.updatedAt || 0);
     applyingRemote = false;
 
     render();
@@ -2179,6 +2379,24 @@
     var out = '';
     for (var i = 0; i < raw.length; i++) out += ('0' + raw[i].toString(16)).slice(-2);
     return out;
+  }
+
+  /* Erstes Verbinden: Ein Gerät, das schon eine Liste hat, meldet sich mit
+     der aktuellen Zeit und gibt damit den Ton an. Ein leeres Gerät meldet
+     sich mit Null und übernimmt, was es findet. */
+  function seedStamp() {
+    var existing = null;
+
+    try {
+      existing = localStorage.getItem(STAMP_KEY);
+    } catch (err) {
+      return;
+    }
+
+    if (existing !== null) return;
+
+    var hasContent = tasks.length > 0 || notesEl.value.trim() !== '';
+    writeStamp(hasContent ? Date.now() : 0);
   }
 
   function loadSync() {
@@ -2289,6 +2507,11 @@
     if (addLines(text)) newTask.value = '';
   });
 
+  dayDate.addEventListener('change', function () {
+    if (isDate(dayDate.value)) setDate(dayDate.value);
+    else markDate();
+  });
+
   syncSave.addEventListener('click', function () {
     var url = syncUrl.value.trim();
     var id = syncId.value.trim();
@@ -2338,9 +2561,19 @@
     toast('Getrennt. Die Liste bleibt auf diesem Gerät.');
   });
 
-  // Beim Zurückkommen nachsehen, ob ein anderes Gerät etwas geändert hat.
+  // Beim Zurückkommen nachsehen, ob ein anderes Gerät etwas geändert hat -
+  // und ob inzwischen ein neuer Tag angebrochen ist.
+  var shownDay = today();
+
   window.addEventListener('focus', function () {
     if (syncOn() && Date.now() - sync.lastPull > 20000) pull();
+
+    if (today() !== shownDay) {
+      shownDay = today();
+      buildQuickDays();
+      render();
+      checkOverdue();
+    }
   });
 
   viewToggle.addEventListener('click', function () {
@@ -2394,8 +2627,9 @@
   buildSections();
   render();
   loadNotes();
+  seedStamp();
   loadSync();
-  checkWeek();
+  checkOverdue();
 
   if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
     newTask.focus();
